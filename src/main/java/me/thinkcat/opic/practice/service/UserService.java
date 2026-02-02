@@ -33,6 +33,9 @@ public class UserService {
             throw new ValidationException("Username already exists");
         }
 
+        validatePassword(request.getPassword());
+        validateEmail(request.getEmail());
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -67,5 +70,18 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
         return UserMapper.toResponse(user);
+    }
+
+    private void validatePassword(String password) {
+        String pattern = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+        if (!password.matches(pattern)) {
+            throw new ValidationException("Password must be at least 8 characters with uppercase, lowercase, digit, and special character");
+        }
+    }
+
+    private void validateEmail(String email) {
+        if (email == null || !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
+            throw new ValidationException("Invalid email format");
+        }
     }
 }
