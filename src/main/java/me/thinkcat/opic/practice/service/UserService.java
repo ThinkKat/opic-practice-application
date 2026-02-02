@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import me.thinkcat.opic.practice.dto.mapper.UserMapper;
 import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
@@ -40,7 +41,7 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        return convertToResponse(savedUser);
+        return UserMapper.toResponse(savedUser);
     }
 
     @Transactional(readOnly = true)
@@ -57,7 +58,7 @@ public class UserService {
         return TokenResponse.builder()
                 .token(token)
                 .tokenType("Bearer")
-                .user(convertToResponse(user))
+                .user(UserMapper.toResponse(user))
                 .build();
     }
 
@@ -65,16 +66,6 @@ public class UserService {
     public UserResponse getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        return convertToResponse(user);
-    }
-
-    private UserResponse convertToResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
+        return UserMapper.toResponse(user);
     }
 }
