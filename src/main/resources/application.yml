@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: opic-practice
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+file:
+  upload-dir: ./uploads
+  max-file-size: 50MB
+  # Browser recording format support
+  # - audio/mpeg: MP3 (universal)
+  # - audio/wav: WAV (high quality)
+  # - audio/m4a: M4A (Desktop Safari)
+  # - audio/webm: WebM (Chrome/Firefox recording)
+  # - audio/mp4: MP4 (iOS Safari recording)
+  allowed-types: audio/mpeg,audio/wav,audio/m4a,audio/webm,audio/mp4
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    version: openapi_3_0
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    csrf:
+      enabled: true
+  packages-to-scan: me.thinkcat.opic.practice
+  paths-to-match: /api/v1/**
