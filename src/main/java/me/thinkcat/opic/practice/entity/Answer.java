@@ -32,7 +32,7 @@ public class Answer extends BaseEntity {
     private Long sessionId;
 
     @Column(name = "audio_uri", nullable = false, columnDefinition = "TEXT")
-    private String audioUri;
+    private String audioUrl;
 
     @Column(name = "mime_type", nullable = false, columnDefinition = "TEXT")
     private String mimeType;

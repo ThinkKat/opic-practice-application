@@ -10,7 +10,7 @@ public class AnswerMapper {
                 .id(answer.getId())
                 .questionId(answer.getQuestionId())
                 .sessionId(answer.getSessionId())
-                .audioUri(answer.getAudioUri())
+                .audioUrl(answer.getAudioUrl())
                 .mimeType(answer.getMimeType())
                 .durationMs(answer.getDurationMs())
                 .transcript(answer.getTranscript())

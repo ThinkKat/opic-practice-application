@@ -15,7 +15,7 @@ public class AnswerResponse {
     private Long id;
     private Long questionId;
     private Long sessionId;
-    private String audioUri;
+    private String audioUrl;
     private String mimeType;
     private Integer durationMs;
     private String transcript;

@@ -38,13 +38,13 @@ public class AnswerService {
 
         // 파일 저장
         String directory = "answers/" + sessionId;
-        String audioUri = fileStorageService.storeFile(audioFile, directory);
+        String audioUrl = fileStorageService.storeFile(audioFile, directory);
 
         // Answer 생성
         Answer answer = Answer.builder()
                 .questionId(questionId)
                 .sessionId(sessionId)
-                .audioUri(audioUri)
+                .audioUrl(audioUrl)
                 .mimeType(audioFile.getContentType())
                 .durationMs(durationMs != null ? durationMs : 0)
                 .build();
@@ -89,7 +89,7 @@ public class AnswerService {
                 .orElseThrow(() -> new ValidationException("Unauthorized access to answer"));
 
         // 파일 삭제
-        fileStorageService.deleteFile(answer.getAudioUri());
+        fileStorageService.deleteFile(answer.getAudioUrl());
 
         // Soft Delete
         answer.softDelete();
