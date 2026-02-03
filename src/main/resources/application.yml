@@ -32,6 +32,13 @@ file:
   # - audio/mp4: MP4 (iOS Safari recording)
   allowed-types: audio/mpeg,audio/wav,audio/m4a,audio/webm,audio/mp4
 
+aws:
+  s3:
+    enabled: false  # 기본값: 비활성화
+    bucket: ${AWS_S3_BUCKET:opic-practice-files}
+    region: ${AWS_REGION:ap-northeast-2}
+    presigned-url-expiration: 900  # 15분 (초 단위)
+
 springdoc:
   api-docs:
     path: /v3/api-docs

@@ -51,6 +51,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
+    @ExceptionHandler(PresignedUrlException.class)
+    public ResponseEntity<ErrorResponse> handlePresignedUrlException(PresignedUrlException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .errorCode("PRESIGNED_URL_ERROR")
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
