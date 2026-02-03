@@ -5,6 +5,7 @@ import me.thinkcat.opic.practice.dto.mapper.AnswerMapper;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
 import me.thinkcat.opic.practice.entity.Answer;
 import me.thinkcat.opic.practice.entity.Session;
+import me.thinkcat.opic.practice.entity.StorageType;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
@@ -45,7 +46,36 @@ public class AnswerService {
                 .questionId(questionId)
                 .sessionId(sessionId)
                 .audioUrl(audioUrl)
+                .storageType(StorageType.LOCAL)
                 .mimeType(audioFile.getContentType())
+                .durationMs(durationMs != null ? durationMs : 0)
+                .build();
+
+        Answer savedAnswer = answerRepository.save(answer);
+
+        return AnswerMapper.toResponse(savedAnswer);
+    }
+
+    @Transactional
+    public AnswerResponse completeAnswerUpload(
+            Long userId,
+            Long sessionId,
+            Long questionId,
+            String fileKey,
+            String mimeType,
+            Integer durationMs) {
+
+        // 세션 권한 확인
+        Session session = sessionRepository.findByIdAndUserId(sessionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with id: " + sessionId));
+
+        // Answer 생성 (S3 업로드 완료 후)
+        Answer answer = Answer.builder()
+                .questionId(questionId)
+                .sessionId(sessionId)
+                .audioUrl(fileKey)
+                .storageType(StorageType.S3)
+                .mimeType(mimeType)
                 .durationMs(durationMs != null ? durationMs : 0)
                 .build();
 
