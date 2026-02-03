@@ -11,7 +11,7 @@ public class QuestionMapper {
                 .categoryId(question.getCategoryId())
                 .questionTypeId(question.getQuestionTypeId())
                 .question(question.getQuestion())
-                .audioFileUrl(question.getAudioFileUrl())
+                .audioFileUri(question.getAudioFileUri())
                 .durationMs(question.getDurationMs())
                 .createdAt(question.getCreatedAt())
                 .updatedAt(question.getUpdatedAt())

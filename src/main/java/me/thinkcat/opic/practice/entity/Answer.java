@@ -11,34 +11,35 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Entity
-@Table(name = "questions")
+@Table(name = "answers")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Where(clause = "deleted_at IS NULL")
-public class Question extends BaseEntity {
+public class Answer extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "category_id", nullable = false)
-    private Long categoryId;
+    @Column(name = "question_id", nullable = false)
+    private Long questionId;
 
-    @Column(name = "question_type_id", nullable = false)
-    private Long questionTypeId;
+    @Column(name = "session_id", nullable = false)
+    private Long sessionId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String question;
+    @Column(name = "audio_uri", nullable = false, columnDefinition = "TEXT")
+    private String audioUri;
 
-    @Column(name = "audio_file_uri", columnDefinition = "TEXT")
-    private String audioFileUri;
+    @Column(name = "mime_type", nullable = false, columnDefinition = "TEXT")
+    private String mimeType;
 
-    @Column(name = "duration_ms")
+    @Column(name = "duration_ms", nullable = false)
     private Integer durationMs;
+
+    @Column(columnDefinition = "TEXT")
+    private String transcript;
 }

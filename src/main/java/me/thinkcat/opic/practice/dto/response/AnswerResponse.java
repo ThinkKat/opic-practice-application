@@ -11,13 +11,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuestionResponse {
+public class AnswerResponse {
     private Long id;
-    private Long categoryId;
-    private Long questionTypeId;
-    private String question;
-    private String audioFileUri;
+    private Long questionId;
+    private Long sessionId;
+    private String audioUri;
+    private String mimeType;
     private Integer durationMs;
+    private String transcript;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
