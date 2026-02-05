@@ -9,7 +9,10 @@ import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.exception.PresignedUrlException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -28,23 +31,25 @@ import java.util.UUID;
 public class PresignedUrlService {
 
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
     private final PresignedUrlProperties properties;
     private final FileStorageProperties fileStorageProperties;
 
     /**
      * 업로드용 Presigned URL 생성
+     *
+     * @param request fileKey, contentType, contentLength 포함
+     * @return Presigned URL 정보
      */
     public PresignedUrlResponse generateUploadUrl(PresignedUrlRequest request) {
         validateFileRequest(request);
-
-        // S3 Key 생성: uploads/{uuid}.{ext}
-        String fileKey = generateFileKey(request.getFileName());
+        validateFileKey(request.getFileKey());
 
         try {
             // PutObjectRequest 생성
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(properties.getBucket())
-                    .key(fileKey)
+                    .key(request.getFileKey())
                     .contentType(request.getContentType())
                     .contentLength(request.getContentLength())
                     .build();
@@ -58,11 +63,11 @@ public class PresignedUrlService {
             // Presigned URL 생성
             PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
 
-            log.info("Generated upload URL for key: {}", fileKey);
+            log.info("Generated upload URL for key: {}", request.getFileKey());
 
             return PresignedUrlResponse.builder()
                     .uploadUrl(presignedRequest.url().toString())
-                    .fileKey(fileKey)
+                    .fileKey(request.getFileKey())
                     .expiresAt(LocalDateTime.now().plusSeconds(properties.getPresignedUrlExpiration()))
                     .requiredHeaders(Map.of(
                             "Content-Type", request.getContentType(),
@@ -71,9 +76,22 @@ public class PresignedUrlService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to generate upload URL for file: {}", request.getFileName(), e);
+            log.error("Failed to generate upload URL for key: {}", request.getFileKey(), e);
             throw new PresignedUrlException("Failed to generate upload URL", e);
         }
+    }
+
+    /**
+     * S3 파일 키 생성 유틸리티 (공개 메서드)
+     * 형식: uploads/{uuid}.{extension}
+     *
+     * @param originalFileName 원본 파일명
+     * @return 생성된 S3 파일 키
+     */
+    public String generateSimpleFileKey(String originalFileName) {
+        String extension = getFileExtension(originalFileName);
+        String uniqueId = UUID.randomUUID().toString();
+        return "uploads/" + uniqueId + extension;
     }
 
     /**
@@ -107,15 +125,6 @@ public class PresignedUrlService {
             log.error("Failed to generate download URL for file: {}", fileKey, e);
             throw new PresignedUrlException("Failed to generate download URL", e);
         }
-    }
-
-    /**
-     * S3 Key 생성: uploads/{uuid}.{ext}
-     */
-    private String generateFileKey(String originalFileName) {
-        String extension = getFileExtension(originalFileName);
-        String uniqueId = UUID.randomUUID().toString();
-        return "uploads/" + uniqueId + extension;
     }
 
     private String getFileExtension(String filename) {
@@ -167,5 +176,30 @@ public class PresignedUrlService {
             return Long.parseLong(upperSize.replace("KB", "").trim()) * 1024;
         }
         return Long.parseLong(size);
+    }
+
+    /**
+     * S3 파일 존재 여부 확인
+     *
+     * @param fileKey S3 파일 키
+     * @return 파일 존재 여부
+     */
+    public boolean checkFileExists(String fileKey) {
+        try {
+            HeadObjectRequest headRequest = HeadObjectRequest.builder()
+                    .bucket(properties.getBucket())
+                    .key(fileKey)
+                    .build();
+
+            s3Client.headObject(headRequest);
+            log.debug("File exists in S3: {}", fileKey);
+            return true;
+        } catch (NoSuchKeyException e) {
+            log.debug("File does not exist in S3: {}", fileKey);
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking file existence in S3: {}", fileKey, e);
+            return false;
+        }
     }
 }

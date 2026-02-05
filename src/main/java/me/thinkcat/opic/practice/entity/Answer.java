@@ -2,6 +2,8 @@ package me.thinkcat.opic.practice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,8 +33,12 @@ public class Answer extends BaseEntity {
     @Column(name = "session_id", nullable = false)
     private Long sessionId;
 
-    @Column(name = "audio_uri", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "audio_url", nullable = false, columnDefinition = "TEXT")
     private String audioUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storage_type", nullable = false, length = 10)
+    private StorageType storageType;
 
     @Column(name = "mime_type", nullable = false, columnDefinition = "TEXT")
     private String mimeType;
@@ -42,4 +48,8 @@ public class Answer extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String transcript;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "upload_status", nullable = false, length = 10)
+    private UploadStatus uploadStatus;
 }

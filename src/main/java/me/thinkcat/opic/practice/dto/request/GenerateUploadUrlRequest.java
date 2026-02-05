@@ -6,15 +6,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * 범용 Presigned URL 발급 요청 (클라이언트용)
+ * 파일명을 받아서 서버에서 키를 자동 생성
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PresignedUrlRequest {
+public class GenerateUploadUrlRequest {
 
-    @NotBlank(message = "S3 파일 키는 필수입니다")
-    @Pattern(regexp = "^uploads/.+", message = "파일 키는 'uploads/'로 시작해야 합니다")
-    private String fileKey;
+    @NotBlank(message = "파일명은 필수입니다")
+    @Size(max = 255, message = "파일명은 255자를 초과할 수 없습니다")
+    private String fileName;
 
     @NotBlank(message = "Content-Type은 필수입니다")
     @Pattern(regexp = "^audio/(mpeg|wav|m4a|webm|mp4)$",

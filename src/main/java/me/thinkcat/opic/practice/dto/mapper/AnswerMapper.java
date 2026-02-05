@@ -11,10 +11,13 @@ public class AnswerMapper {
                 .questionId(answer.getQuestionId())
                 .sessionId(answer.getSessionId())
                 .audioUrl(answer.getAudioUrl())
+                .storageType(answer.getStorageType())
                 .mimeType(answer.getMimeType())
                 .durationMs(answer.getDurationMs())
                 .transcript(answer.getTranscript())
+                .uploadStatus(answer.getUploadStatus())
                 .createdAt(answer.getCreatedAt())
+                .updatedAt(answer.getUpdatedAt())
                 .build();
     }
 }

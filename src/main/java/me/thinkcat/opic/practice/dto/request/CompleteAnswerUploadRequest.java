@@ -15,6 +15,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CompleteAnswerUploadRequest {
 
+    @NotNull(message = "Answer ID is required")
+    private Long answerId;
+
     @NotNull(message = "Session ID is required")
     private Long sessionId;
 

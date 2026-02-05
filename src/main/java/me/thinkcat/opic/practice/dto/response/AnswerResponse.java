@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import me.thinkcat.opic.practice.entity.StorageType;
+import me.thinkcat.opic.practice.entity.UploadStatus;
 
 import java.time.LocalDateTime;
 
@@ -16,8 +18,11 @@ public class AnswerResponse {
     private Long questionId;
     private Long sessionId;
     private String audioUrl;
+    private StorageType storageType;
     private String mimeType;
     private Integer durationMs;
     private String transcript;
+    private UploadStatus uploadStatus;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
