@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SessionResponse {
-    private Long id;
-    private Long userId;
-    private Long questionSetId;
+    private String id;
+    private String userId;
+    private String questionSetId;
     private String title;
     private String mode;
     private String status;

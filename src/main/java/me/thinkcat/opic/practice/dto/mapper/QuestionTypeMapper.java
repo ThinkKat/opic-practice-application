@@ -7,7 +7,7 @@ public class QuestionTypeMapper {
 
     public static QuestionTypeResponse toResponse(QuestionType questionType) {
         return QuestionTypeResponse.builder()
-                .id(questionType.getId())
+                .id(questionType.getId() != null ? questionType.getId().toString() : null)
                 .name(questionType.getName())
                 .createdAt(questionType.getCreatedAt())
                 .updatedAt(questionType.getUpdatedAt())

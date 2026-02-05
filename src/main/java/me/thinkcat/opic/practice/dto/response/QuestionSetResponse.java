@@ -13,8 +13,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionSetResponse {
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String title;
     private List<QuestionResponse> questions;
     private LocalDateTime createdAt;

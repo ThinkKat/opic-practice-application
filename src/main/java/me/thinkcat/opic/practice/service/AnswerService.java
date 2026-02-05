@@ -106,7 +106,7 @@ public class AnswerService {
 
         // 응답 생성
         return PrepareAnswerUploadResponse.builder()
-                .answerId(savedAnswer.getId())
+                .answerId(savedAnswer.getId() != null ? savedAnswer.getId().toString() : null)
                 .uploadUrl(presignedUrlResponse.getUploadUrl())
                 .fileKey(fileKey)
                 .expiresAt(presignedUrlResponse.getExpiresAt())
