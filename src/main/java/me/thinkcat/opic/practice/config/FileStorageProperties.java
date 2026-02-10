@@ -12,7 +12,5 @@ import java.util.List;
 @Getter
 @Setter
 public class FileStorageProperties {
-    private String uploadDir;
-    private String maxFileSize;
     private List<String> allowedTypes;
 }
