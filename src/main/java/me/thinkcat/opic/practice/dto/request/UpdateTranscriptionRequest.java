@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateTranscriptionRequest {
 
+    @NotBlank(message = "Audio URL must not be blank")
+    private String audioUrl;
+
     @NotBlank(message = "Transcription must not be blank")
     private String transcription;
 }

@@ -17,12 +17,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     Optional<Answer> findBySessionIdAndQuestionId(Long sessionId, Long questionId);
 
-    /**
-     * 유령 데이터 정리용: 특정 상태이고 특정 시간 이전에 업데이트된 레코드 조회
-     *
-     * @param uploadStatus 업로드 상태
-     * @param threshold    기준 시간
-     * @return 조건에 해당하는 Answer 목록
-     */
+    Optional<Answer> findByAudioUrl(String audioUrl);
+
     List<Answer> findByUploadStatusAndUpdatedAtBefore(UploadStatus uploadStatus, LocalDateTime threshold);
 }

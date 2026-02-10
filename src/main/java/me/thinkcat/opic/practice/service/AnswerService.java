@@ -167,9 +167,9 @@ public class AnswerService {
     }
 
     @Transactional
-    public void updateTranscription(Long answerId, String transcription) {
-        Answer answer = answerRepository.findById(answerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
+    public void updateTranscription(String audioUrl, String transcription) {
+        Answer answer = answerRepository.findByAudioUrl(audioUrl)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with audioUrl: " + audioUrl));
 
         answer.setTranscript(transcription);
         answerRepository.save(answer);
