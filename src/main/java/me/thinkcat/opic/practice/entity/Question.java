@@ -36,8 +36,8 @@ public class Question extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String question;
 
-    @Column(name = "audio_file_uri", columnDefinition = "TEXT")
-    private String audioFileUri;
+    @Column(name = "audio_file_url", columnDefinition = "TEXT")
+    private String audioFileUrl;
 
     @Column(name = "duration_ms")
     private Integer durationMs;
