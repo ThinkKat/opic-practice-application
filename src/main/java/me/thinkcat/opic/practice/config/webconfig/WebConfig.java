@@ -24,6 +24,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(internalApiKeyInterceptor)
-                .addPathPatterns("/api/v1/answers/*/transcription");
+                .addPathPatterns("/api/v1/answers/transcription");
     }
 }

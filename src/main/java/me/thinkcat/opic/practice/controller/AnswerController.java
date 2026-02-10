@@ -71,12 +71,11 @@ public class AnswerController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{id}/transcription")
+    @PatchMapping("/transcription")
     public ResponseEntity<CommonResponse<Void>> updateTranscription(
-            @PathVariable Long id,
             @Valid @RequestBody UpdateTranscriptionRequest request) {
 
-        answerService.updateTranscription(id, request.getTranscription());
+        answerService.updateTranscription(request.getAudioUrl(), request.getTranscription());
 
         CommonResponse<Void> response = CommonResponse.<Void>builder()
                 .success(true)
