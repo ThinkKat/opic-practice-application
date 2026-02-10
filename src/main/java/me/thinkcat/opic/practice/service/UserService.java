@@ -53,10 +53,10 @@ public class UserService {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
-        String token = jwtTokenProvider.generateToken(authentication.getName());
-
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String token = jwtTokenProvider.generateToken(authentication.getName(), user.getId());
 
         return TokenResponse.builder()
                 .token(token)
