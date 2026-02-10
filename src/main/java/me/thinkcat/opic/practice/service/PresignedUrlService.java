@@ -35,12 +35,6 @@ public class PresignedUrlService {
     private final PresignedUrlProperties properties;
     private final FileStorageProperties fileStorageProperties;
 
-    /**
-     * 업로드용 Presigned URL 생성
-     *
-     * @param request fileKey, contentType, contentLength 포함
-     * @return Presigned URL 정보
-     */
     public PresignedUrlResponse generateUploadUrl(PresignedUrlRequest request) {
         validateFileRequest(request);
         validateFileKey(request.getFileKey());
@@ -81,22 +75,6 @@ public class PresignedUrlService {
         }
     }
 
-    /**
-     * S3 파일 키 생성 유틸리티 (공개 메서드)
-     * 형식: uploads/{uuid}.{extension}
-     *
-     * @param originalFileName 원본 파일명
-     * @return 생성된 S3 파일 키
-     */
-    public String generateSimpleFileKey(String originalFileName) {
-        String extension = getFileExtension(originalFileName);
-        String uniqueId = UUID.randomUUID().toString();
-        return "uploads/" + uniqueId + extension;
-    }
-
-    /**
-     * 다운로드용 Presigned URL 생성
-     */
     public PresignedUrlResponse generateDownloadUrl(String fileKey) {
         validateFileKey(fileKey);
 
@@ -127,25 +105,12 @@ public class PresignedUrlService {
         }
     }
 
-    private String getFileExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
-        }
-        return filename.substring(filename.lastIndexOf("."));
-    }
 
     private void validateFileRequest(PresignedUrlRequest request) {
         // Content-Type 검증
         if (!fileStorageProperties.getAllowedTypes().contains(request.getContentType())) {
             throw new ValidationException(
                     "Unsupported content type: " + request.getContentType());
-        }
-
-        // 파일 크기 검증
-        long maxSize = parseSize(fileStorageProperties.getMaxFileSize());
-        if (request.getContentLength() > maxSize) {
-            throw new ValidationException(
-                    "File size exceeds maximum: " + fileStorageProperties.getMaxFileSize());
         }
     }
 
@@ -178,12 +143,6 @@ public class PresignedUrlService {
         return Long.parseLong(size);
     }
 
-    /**
-     * S3 파일 존재 여부 확인
-     *
-     * @param fileKey S3 파일 키
-     * @return 파일 존재 여부
-     */
     public boolean checkFileExists(String fileKey) {
         try {
             HeadObjectRequest headRequest = HeadObjectRequest.builder()
