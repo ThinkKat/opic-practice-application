@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.exception;
 
-import me.thinkcat.opic.practice.dto.response.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
+import me.thinkcat.opic.practice.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,11 +13,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("RESOURCE_NOT_FOUND")
                 .message(ex.getMessage())
@@ -26,6 +29,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidation(ValidationException ex) {
+        log.warn("Validation error: {}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("VALIDATION_ERROR")
                 .message(ex.getMessage())
@@ -35,6 +39,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+        log.warn("Unauthorized access: {}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("UNAUTHORIZED")
                 .message(ex.getMessage())
@@ -44,6 +49,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Bad credentials attempt: {}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("BAD_CREDENTIALS")
                 .message("Invalid username or password")
@@ -53,6 +59,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PresignedUrlException.class)
     public ResponseEntity<ErrorResponse> handlePresignedUrlException(PresignedUrlException ex) {
+        log.error("Presigned URL generation failed: {}", ex.getMessage(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("PRESIGNED_URL_ERROR")
                 .message(ex.getMessage())
@@ -69,6 +76,7 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
+        log.warn("Method argument validation failed: {}", errors);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("INVALID_INPUT")
                 .message("Validation failed: " + errors.toString())
@@ -78,6 +86,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("INTERNAL_SERVER_ERROR")
                 .message("An unexpected error occurred: " + ex.getMessage())
