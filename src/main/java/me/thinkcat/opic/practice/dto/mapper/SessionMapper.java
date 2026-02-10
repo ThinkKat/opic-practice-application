@@ -10,9 +10,9 @@ public class SessionMapper {
         SessionStatus status = session.getStatus();
 
         return SessionResponse.builder()
-                .id(session.getId())
-                .userId(session.getUserId())
-                .questionSetId(session.getQuestionSetId())
+                .id(session.getId() != null ? session.getId().toString() : null)
+                .userId(session.getUserId() != null ? session.getUserId().toString() : null)
+                .questionSetId(session.getQuestionSetId() != null ? session.getQuestionSetId().toString() : null)
                 .title(session.getTitle())
                 .mode(session.getMode())
                 .status(status.name())

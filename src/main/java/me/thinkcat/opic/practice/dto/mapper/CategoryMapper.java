@@ -7,7 +7,7 @@ public class CategoryMapper {
 
     public static CategoryResponse toResponse(Category category) {
         return CategoryResponse.builder()
-                .id(category.getId())
+                .id(category.getId() != null ? category.getId().toString() : null)
                 .name(category.getName())
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())

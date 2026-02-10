@@ -1,7 +1,7 @@
 package me.thinkcat.opic.practice.controller;
 
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.dto.response.CommonResponse;
+import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.QuestionTypeResponse;
 import me.thinkcat.opic.practice.service.QuestionTypeService;
 import org.springframework.http.ResponseEntity;

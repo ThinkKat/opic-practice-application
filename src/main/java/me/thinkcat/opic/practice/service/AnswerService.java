@@ -30,47 +30,8 @@ public class AnswerService {
 
     private final AnswerRepository answerRepository;
     private final SessionRepository sessionRepository;
-    private final FileStorageService fileStorageService;
     private final PresignedUrlService presignedUrlService;
 
-    /**
-     * 로컬 파일 업로드 (기존 메서드 - 호환성 유지)
-     */
-    @Transactional
-    public AnswerResponse createAnswer(
-            Long userId,
-            Long sessionId,
-            Long questionId,
-            MultipartFile audioFile,
-            Integer durationMs) {
-
-        // 세션 권한 확인
-        Session session = sessionRepository.findByIdAndUserId(sessionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found with id: " + sessionId));
-
-        // 파일 저장
-        String directory = "answers/" + sessionId;
-        String audioUrl = fileStorageService.storeFile(audioFile, directory);
-
-        // Answer 생성 (로컬 업로드는 즉시 SUCCESS 상태)
-        Answer answer = Answer.builder()
-                .questionId(questionId)
-                .sessionId(sessionId)
-                .audioUrl(audioUrl)
-                .storageType(StorageType.LOCAL)
-                .mimeType(audioFile.getContentType())
-                .durationMs(durationMs != null ? durationMs : 0)
-                .uploadStatus(UploadStatus.SUCCESS)
-                .build();
-
-        Answer savedAnswer = answerRepository.save(answer);
-
-        return resolveAnswerResponse(savedAnswer);
-    }
-
-    /**
-     * 1단계: S3 업로드 준비 (Presigned URL 발급 + DB 레코드 생성)
-     */
     @Transactional
     public PrepareAnswerUploadResponse prepareAnswerUpload(
             Long userId,
@@ -80,18 +41,14 @@ public class AnswerService {
             String contentType,
             Long contentLength) {
 
-        // 세션 권한 확인
         Session session = sessionRepository.findByIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with id: " + sessionId));
 
-        // S3 Object Key 생성 (AnswerService가 책임)
         String fileKey = generateFileKey(sessionId, questionId, fileName);
 
-        // Presigned URL 발급 (생성한 fileKey 전달)
         PresignedUrlRequest request = new PresignedUrlRequest(fileKey, contentType, contentLength);
         PresignedUrlResponse presignedUrlResponse = presignedUrlService.generateUploadUrl(request);
 
-        // DB에 PENDING 상태로 먼저 저장
         Answer answer = Answer.builder()
                 .questionId(questionId)
                 .sessionId(sessionId)
@@ -106,7 +63,7 @@ public class AnswerService {
 
         // 응답 생성
         return PrepareAnswerUploadResponse.builder()
-                .answerId(savedAnswer.getId())
+                .answerId(savedAnswer.getId() != null ? savedAnswer.getId().toString() : null)
                 .uploadUrl(presignedUrlResponse.getUploadUrl())
                 .fileKey(fileKey)
                 .expiresAt(presignedUrlResponse.getExpiresAt())
@@ -114,9 +71,6 @@ public class AnswerService {
                 .build();
     }
 
-    /**
-     * 2단계: S3 업로드 완료 통지 (PENDING -> SUCCESS)
-     */
     @Transactional
     public AnswerResponse completeAnswerUpload(
             Long userId,
@@ -147,10 +101,6 @@ public class AnswerService {
         return resolveAnswerResponse(updatedAnswer);
     }
 
-    /**
-     * 세션별 답변 목록 조회 (단순 조회)
-     * SUCCESS 상태인 답변만 반환
-     */
     @Transactional(readOnly = true)
     public List<AnswerResponse> getSessionAnswers(Long sessionId, Long userId) {
         // 세션 권한 확인
@@ -216,42 +166,17 @@ public class AnswerService {
         return resolveAnswerResponse(answer);
     }
 
-    @Transactional
-    public void deleteAnswer(Long answerId, Long userId) {
-        Answer answer = answerRepository.findById(answerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
-
-        // 세션을 통한 권한 확인
-        sessionRepository.findByIdAndUserId(answer.getSessionId(), userId)
-                .orElseThrow(() -> new ValidationException("Unauthorized access to answer"));
-
-        // 파일 삭제
-        fileStorageService.deleteFile(answer.getAudioUrl());
-
-        // Soft Delete
-        answer.softDelete();
-        answerRepository.save(answer);
-    }
-
-    /**
-     * Answer의 audioUrl을 실제 HTTP URL로 변환
-     * - LOCAL: 백엔드 스트리밍 엔드포인트 URL
-     * - S3: Presigned URL (다운로드용)
-     */
     private String resolveAudioUrl(Answer answer) {
         if (answer.getStorageType() == StorageType.S3) {
             // S3: Presigned URL 생성
             return presignedUrlService.generateDownloadUrl(answer.getAudioUrl())
                     .getUploadUrl();
         } else {
-            // LOCAL: 백엔드 스트리밍 엔드포인트 (상대 경로)
+            // TODO: LOCAL 타입은 삭졔 예정.
             return "/api/v1/files/stream/" + answer.getAudioUrl();
         }
     }
 
-    /**
-     * AnswerResponse의 audioUrl을 HTTP URL로 변환
-     */
     private AnswerResponse resolveAnswerResponse(Answer answer) {
         AnswerResponse response = AnswerMapper.toResponse(answer);
         // audioUrl을 HTTP URL로 변환

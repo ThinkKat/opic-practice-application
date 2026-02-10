@@ -7,9 +7,9 @@ public class AnswerMapper {
 
     public static AnswerResponse toResponse(Answer answer) {
         return AnswerResponse.builder()
-                .id(answer.getId())
-                .questionId(answer.getQuestionId())
-                .sessionId(answer.getSessionId())
+                .id(answer.getId() != null ? answer.getId().toString() : null)
+                .questionId(answer.getQuestionId() != null ? answer.getQuestionId().toString() : null)
+                .sessionId(answer.getSessionId() != null ? answer.getSessionId().toString() : null)
                 .audioUrl(answer.getAudioUrl())
                 .storageType(answer.getStorageType())
                 .mimeType(answer.getMimeType())

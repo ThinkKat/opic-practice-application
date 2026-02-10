@@ -13,7 +13,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class PrepareAnswerUploadResponse {
 
-    private Long answerId;
+    private String answerId;
     private String uploadUrl;
     private String fileKey;
     private LocalDateTime expiresAt;

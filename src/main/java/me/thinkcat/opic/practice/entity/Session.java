@@ -11,8 +11,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Where;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
 
 @Entity
@@ -41,7 +43,8 @@ public class Session extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String mode;
 
-    @Column(name = "status_code", nullable = false, length = 7)
+    @Column(name = "status_code", nullable = false, columnDefinition = "char(7)")
+    @JdbcTypeCode(Types.CHAR)
     private String statusCode;
 
     @Column(name = "current_index", nullable = false)

@@ -1,8 +1,10 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import me.thinkcat.opic.practice.dto.mapper.QuestionMapper;
 import me.thinkcat.opic.practice.dto.mapper.SessionMapper;
 import me.thinkcat.opic.practice.dto.request.SessionCreateRequest;
+import me.thinkcat.opic.practice.dto.response.QuestionResponse;
 import me.thinkcat.opic.practice.dto.response.SessionResponse;
 import me.thinkcat.opic.practice.entity.Question;
 import me.thinkcat.opic.practice.entity.QuestionSet;
@@ -11,6 +13,7 @@ import me.thinkcat.opic.practice.entity.Session;
 import me.thinkcat.opic.practice.entity.SessionStatus;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
+import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.QuestionSetItemRepository;
 import me.thinkcat.opic.practice.repository.QuestionSetRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
@@ -30,6 +33,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionSetItemRepository questionSetItemRepository;
+    private final QuestionRepository questionRepository;
     private final QuestionSelector questionSelector;
     private final NoOpSelectionPolicy defaultPolicy;
 
@@ -123,10 +127,6 @@ public class SessionService {
     public SessionResponse completeSession(Long sessionId, Long userId) {
         Session session = findSessionByIdAndUserId(sessionId, userId);
 
-        if (!session.isInProgress()) {
-            throw new ValidationException("Only in-progress sessions can be completed");
-        }
-
         session.complete();
         Session updatedSession = sessionRepository.save(session);
 
@@ -158,6 +158,37 @@ public class SessionService {
         List<Session> sessions = sessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
         return sessions.stream()
                 .map(SessionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestionResponse> getSessionQuestions(Long sessionId, Long userId) {
+        Session session = findSessionByIdAndUserId(sessionId, userId);
+
+        if (session.getQuestionSetId() == null) {
+            throw new ValidationException("Session does not have an associated question set");
+        }
+
+        // QuestionSetItem을 순서대로 조회
+        List<QuestionSetItem> questionSetItems = questionSetItemRepository
+                .findByQuestionSetIdOrderByOrderIndex(session.getQuestionSetId());
+
+        // Question ID 목록 추출
+        List<Long> questionIds = questionSetItems.stream()
+                .map(QuestionSetItem::getQuestionId)
+                .collect(Collectors.toList());
+
+        // Question 조회 (순서 유지를 위해 수동으로 정렬)
+        List<Question> questions = questionRepository.findAllById(questionIds);
+
+        // ID를 기반으로 Question을 Map으로 변환하여 빠른 조회
+        var questionMap = questions.stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+
+        // QuestionSetItem의 순서대로 Question을 정렬하여 반환
+        return questionIds.stream()
+                .map(questionMap::get)
+                .map(QuestionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 

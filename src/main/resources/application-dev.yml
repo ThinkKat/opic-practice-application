@@ -14,7 +14,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    defer-datasource-initialization: false
+    defer-datasource-initialization: true
 
   sql:
     init:
@@ -22,9 +22,12 @@ spring:
 
 jwt:
   secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
-  expiration: 86400000  # 24 hours in milliseconds
+  expiration: 86400000
 
-aws:
-  s3:
-    enabled: false  # 개발 시 로컬 파일 시스템 사용
-    # 테스트 시: -Daws.s3.enabled=true 로 활성화
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics" # 필요한 것만 명시
+        exclude: "env,beans,heapdump"

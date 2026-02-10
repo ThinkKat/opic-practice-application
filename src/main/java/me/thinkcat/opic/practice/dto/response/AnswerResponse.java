@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnswerResponse {
-    private Long id;
-    private Long questionId;
-    private Long sessionId;
+    private String id;
+    private String questionId;
+    private String sessionId;
     private String audioUrl;
     private StorageType storageType;
     private String mimeType;

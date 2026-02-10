@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.dto.response;
+package me.thinkcat.opic.practice.dto;
 
 import lombok.Builder;
 import lombok.Getter;

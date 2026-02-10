@@ -1,2 +1,6 @@
 tmp
 .gradle
+.DS_Store
+.idea/
+.claude/
+build/

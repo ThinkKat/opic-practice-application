@@ -7,7 +7,7 @@ public class UserMapper {
 
     public static UserResponse toResponse(User user) {
         return UserResponse.builder()
-                .id(user.getId())
+                .id(user.getId() != null ? user.getId().toString() : null)
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .createdAt(user.getCreatedAt())

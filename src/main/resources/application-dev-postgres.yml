@@ -9,11 +9,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    defer-datasource-initialization: true
-
-  sql:
-    init:
-      mode: always
 
 jwt:
   secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long

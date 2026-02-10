@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionResponse {
-    private Long id;
-    private Long categoryId;
-    private Long questionTypeId;
+    private String id;
+    private String categoryId;
+    private String questionTypeId;
     private String question;
-    private String audioFileUri;
+    private String audioFileUrl;
     private Integer durationMs;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
