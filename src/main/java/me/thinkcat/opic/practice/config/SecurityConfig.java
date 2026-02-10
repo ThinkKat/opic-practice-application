@@ -34,7 +34,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/actuator/**",
             "/api/v1/auth/login",
-            "/api/v1/auth/register"
+            "/api/v1/auth/register",
+            "/api/v1/answers/*/transcription"
     };
 
     @Bean
@@ -59,7 +60,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Internal-Api-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setMaxAge(3600L);
         configuration.setAllowCredentials(true);
