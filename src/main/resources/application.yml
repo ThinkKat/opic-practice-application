@@ -8,6 +8,9 @@ aws:
     region: ${AWS_REGION:ap-northeast-2}
     presigned-url-expiration: 900
 
+internal:
+  api-key: ${INTERNAL_API_KEY}
+
 file:
   allowed-types:
     - audio/mpeg

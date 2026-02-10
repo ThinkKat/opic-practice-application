@@ -22,6 +22,9 @@ jwt:
   secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
   expiration: 86400000
 
+internal:
+  api-key: testtesttesttesttest
+
 springdoc:
   api-docs:
     path: /v3/api-docs

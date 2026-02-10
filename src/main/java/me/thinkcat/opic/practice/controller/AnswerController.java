@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.request.CompleteAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.PrepareAnswerUploadRequest;
+import me.thinkcat.opic.practice.dto.request.UpdateTranscriptionRequest;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareAnswerUploadResponse;
@@ -12,6 +13,7 @@ import me.thinkcat.opic.practice.security.AuthUserInfo;
 import me.thinkcat.opic.practice.service.AnswerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -69,6 +71,21 @@ public class AnswerController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}/transcription")
+    public ResponseEntity<CommonResponse<Void>> updateTranscription(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateTranscriptionRequest request) {
+
+        answerService.updateTranscription(id, request.getTranscription());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Transcription updated successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<CommonResponse<List<AnswerResponse>>> getSessionAnswers(
             @PathVariable Long sessionId,
@@ -86,20 +103,4 @@ public class AnswerController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}/playback")
-    public ResponseEntity<CommonResponse<AnswerResponse>> getAnswerForPlayback(
-            @PathVariable Long id,
-            @AuthUser AuthUserInfo user) {
-
-        Long userId = user.getUserId();
-        AnswerResponse answerResponse = answerService.getAnswerForPlayback(id, userId);
-
-        CommonResponse<AnswerResponse> response = CommonResponse.<AnswerResponse>builder()
-                .success(true)
-                .result(answerResponse)
-                .message("Answer ready for playback")
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
 }

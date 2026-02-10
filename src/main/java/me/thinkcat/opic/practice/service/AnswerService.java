@@ -166,6 +166,15 @@ public class AnswerService {
         return resolveAnswerResponse(answer);
     }
 
+    @Transactional
+    public void updateTranscription(Long answerId, String transcription) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
+
+        answer.setTranscript(transcription);
+        answerRepository.save(answer);
+    }
+
     private String resolveAudioUrl(Answer answer) {
         if (answer.getStorageType() == StorageType.S3) {
             // S3: Presigned URL 생성
