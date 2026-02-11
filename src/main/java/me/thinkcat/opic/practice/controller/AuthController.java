@@ -2,11 +2,14 @@ package me.thinkcat.opic.practice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import me.thinkcat.opic.practice.dto.request.AccessTokenRefreshRequest;
 import me.thinkcat.opic.practice.dto.request.LoginRequest;
+import me.thinkcat.opic.practice.dto.request.LogoutRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
+import me.thinkcat.opic.practice.service.RefreshTokenService;
 import me.thinkcat.opic.practice.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
 
     @PostMapping("/register")
     public ResponseEntity<CommonResponse<UserResponse>> register(@Valid @RequestBody UserRegisterRequest request) {
@@ -45,6 +49,19 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<CommonResponse<TokenResponse>> refresh(@Valid @RequestBody AccessTokenRefreshRequest request) {
+        TokenResponse tokenResponse = refreshTokenService.refreshTokens(request.getRefreshToken());
+
+        CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
+                .success(true)
+                .result(tokenResponse)
+                .message("Token refreshed successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/me")
     public ResponseEntity<CommonResponse<UserResponse>> getCurrentUser(Authentication authentication) {
         UserResponse userResponse = userService.getUserByUsername(authentication.getName());
@@ -59,7 +76,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<CommonResponse<Void>> logout() {
+    public ResponseEntity<CommonResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
+        refreshTokenService.revokeRefreshToken(request.getRefreshToken());
+
         CommonResponse<Void> response = CommonResponse.<Void>builder()
                 .success(true)
                 .message("Logout successful")

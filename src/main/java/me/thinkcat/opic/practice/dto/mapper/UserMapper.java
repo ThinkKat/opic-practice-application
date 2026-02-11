@@ -9,7 +9,6 @@ public class UserMapper {
         return UserResponse.builder()
                 .id(user.getId() != null ? user.getId().toString() : null)
                 .username(user.getUsername())
-                .email(user.getEmail())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

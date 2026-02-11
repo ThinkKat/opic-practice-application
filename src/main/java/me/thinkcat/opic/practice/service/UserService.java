@@ -6,6 +6,7 @@ import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
+import me.thinkcat.opic.practice.entity.RefreshToken;
 import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
@@ -13,7 +14,6 @@ import me.thinkcat.opic.practice.repository.UserRepository;
 import me.thinkcat.opic.practice.security.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +26,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
@@ -47,20 +48,23 @@ public class UserService {
         return UserMapper.toResponse(savedUser);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String token = jwtTokenProvider.generateToken(authentication.getName(), user.getId());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return TokenResponse.builder()
-                .token(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
                 .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getAccessTokenValidityInSeconds())
                 .user(UserMapper.toResponse(user))
                 .build();
     }

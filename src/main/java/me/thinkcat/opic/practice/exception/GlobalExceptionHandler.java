@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleTokenExpired(TokenExpiredException ex) {
+        log.warn("Token expired: {}", ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .errorCode("REFRESH_TOKEN_EXPIRED")
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
         log.warn("Unauthorized access: {}", ex.getMessage());
