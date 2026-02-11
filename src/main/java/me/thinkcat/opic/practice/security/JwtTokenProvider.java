@@ -16,8 +16,11 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long validityInMilliseconds;
+    @Value("${jwt.access-expiration}")
+    private long accessTokenValidity;
+
+    @Value("${jwt.refresh-expiration}")
+    private long refreshTokenValidity;
 
     private SecretKey key;
 
@@ -26,7 +29,23 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, Long userId) {
+    public String generateAccessToken(String username, Long userId) {
+        return buildToken(username, userId, accessTokenValidity);
+    }
+
+    public String generateRefreshToken(String username, Long userId) {
+        return buildToken(username, userId, refreshTokenValidity);
+    }
+
+    public long getAccessTokenValidityInSeconds() {
+        return accessTokenValidity / 1000;
+    }
+
+    public long getRefreshTokenValidityInMillis() {
+        return refreshTokenValidity;
+    }
+
+    private String buildToken(String username, Long userId, long validityInMilliseconds) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -39,16 +58,25 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    /**
+     * @return TokenValidationResult.VALID, EXPIRED, or INVALID
+     */
+    public TokenValidationResult validateToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
-            return true;
+            return TokenValidationResult.VALID;
+        } catch (ExpiredJwtException e) {
+            return TokenValidationResult.EXPIRED;
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return TokenValidationResult.INVALID;
         }
+    }
+
+    public enum TokenValidationResult {
+        VALID, EXPIRED, INVALID
     }
 
     public String getUsernameFromToken(String token) {

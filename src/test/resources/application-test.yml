@@ -20,7 +20,8 @@ spring:
 
 jwt:
   secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
-  expiration: 86400000
+  access-expiration: 5000        # 5초
+  refresh-expiration: 10000      # 10초
 
 internal:
   api-key: testtesttesttesttest
