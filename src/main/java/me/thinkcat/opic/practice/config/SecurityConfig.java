@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.config;
 
 import lombok.RequiredArgsConstructor;
+import me.thinkcat.opic.practice.security.JwtAuthenticationEntryPoint;
 import me.thinkcat.opic.practice.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
@@ -49,6 +51,9 @@ public class SecurityConfig {
                 .requestMatchers(PUBLIC_URLS).permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -57,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Internal-Api-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
