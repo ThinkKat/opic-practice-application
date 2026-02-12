@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.security.annotation;
+package me.thinkcat.opic.practice.config.security.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

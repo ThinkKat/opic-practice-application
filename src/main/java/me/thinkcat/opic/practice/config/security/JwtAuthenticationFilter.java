@@ -1,13 +1,10 @@
-package me.thinkcat.opic.practice.security;
+package me.thinkcat.opic.practice.config.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.dto.ErrorResponse;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -25,7 +22,6 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -45,14 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-                case EXPIRED -> {
-                    sendErrorResponse(response, "ACCESS_TOKEN_EXPIRED", "Access token expired");
-                    return;
-                }
-                case INVALID -> {
-                    sendErrorResponse(response, "INVALID_TOKEN", "Invalid token");
-                    return;
-                }
+                case EXPIRED -> request.setAttribute("auth-error", "ACCESS_TOKEN_EXPIRED");
+                case INVALID -> request.setAttribute("auth-error", "INVALID_TOKEN");
             }
         }
 
@@ -65,18 +55,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
         return null;
-    }
-
-    private void sendErrorResponse(HttpServletResponse response, String errorCode, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode(errorCode)
-                .message(message)
-                .build();
-
-        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }

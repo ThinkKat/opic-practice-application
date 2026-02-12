@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.security;
+package me.thinkcat.opic.practice.config.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

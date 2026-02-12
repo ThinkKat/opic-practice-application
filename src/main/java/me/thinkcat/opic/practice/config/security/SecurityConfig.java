@@ -1,7 +1,6 @@
-package me.thinkcat.opic.practice.config;
+package me.thinkcat.opic.practice.config.security;
 
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,7 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,6 +25,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
@@ -49,6 +48,9 @@ public class SecurityConfig {
                 .requestMatchers(PUBLIC_URLS).permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -57,7 +59,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Internal-Api-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));

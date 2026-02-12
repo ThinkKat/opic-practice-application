@@ -7,7 +7,7 @@ import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.TokenExpiredException;
 import me.thinkcat.opic.practice.exception.UnauthorizedException;
 import me.thinkcat.opic.practice.repository.RefreshTokenRepository;
-import me.thinkcat.opic.practice.security.JwtTokenProvider;
+import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

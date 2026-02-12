@@ -1,7 +1,7 @@
 package me.thinkcat.opic.practice.config.webconfig;
 
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.security.AuthUserArgumentResolver;
+import me.thinkcat.opic.practice.config.security.AuthUserArgumentResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

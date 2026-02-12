@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.security;
+package me.thinkcat.opic.practice.config.security;
 
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.entity.User;
