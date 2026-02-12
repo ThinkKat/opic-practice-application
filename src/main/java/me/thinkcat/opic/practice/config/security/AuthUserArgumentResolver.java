@@ -1,9 +1,9 @@
-package me.thinkcat.opic.practice.security;
+package me.thinkcat.opic.practice.config.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.exception.ValidationException;
-import me.thinkcat.opic.practice.security.annotation.AuthUser;
+import me.thinkcat.opic.practice.config.security.annotation.AuthUser;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;

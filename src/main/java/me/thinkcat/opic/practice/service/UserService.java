@@ -11,7 +11,7 @@ import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.UserRepository;
-import me.thinkcat.opic.practice.security.JwtTokenProvider;
+import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
