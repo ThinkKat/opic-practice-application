@@ -18,7 +18,7 @@ import me.thinkcat.opic.practice.repository.QuestionSetItemRepository;
 import me.thinkcat.opic.practice.repository.QuestionSetRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
 import me.thinkcat.opic.practice.service.question.QuestionSelector;
-import me.thinkcat.opic.practice.service.question.policy.NoOpSelectionPolicy;
+import me.thinkcat.opic.practice.service.question.policy.UniformDistributionPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +35,7 @@ public class SessionService {
     private final QuestionSetItemRepository questionSetItemRepository;
     private final QuestionRepository questionRepository;
     private final QuestionSelector questionSelector;
-    private final NoOpSelectionPolicy defaultPolicy;
+    private final UniformDistributionPolicy defaultPolicy;
 
     @Transactional
     public SessionResponse createSession(Long userId, SessionCreateRequest request) {
