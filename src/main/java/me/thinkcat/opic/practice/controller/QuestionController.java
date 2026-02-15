@@ -58,4 +58,17 @@ public class QuestionController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/internal/{id}")
+    public ResponseEntity<CommonResponse<QuestionResponse>> getQuestionByIdInternal(@PathVariable Long id) {
+        QuestionResponse question = questionService.getQuestionById(id);
+
+        CommonResponse<QuestionResponse> response = CommonResponse.<QuestionResponse>builder()
+                .success(true)
+                .result(question)
+                .message("Question retrieved successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 }

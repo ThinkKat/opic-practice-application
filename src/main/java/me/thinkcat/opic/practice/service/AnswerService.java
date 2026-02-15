@@ -167,11 +167,27 @@ public class AnswerService {
     }
 
     @Transactional
-    public void updateTranscription(String audioUrl, String transcription) {
+    public void updateTranscription(String audioUrl, String transcription,
+                                     String wordSegments, String pauseAnalysis,
+                                     Double duration) {
         Answer answer = answerRepository.findByAudioUrl(audioUrl)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with audioUrl: " + audioUrl));
 
         answer.setTranscript(transcription);
+        if (wordSegments != null) answer.setWordSegments(wordSegments);
+        if (pauseAnalysis != null) answer.setPauseAnalysis(pauseAnalysis);
+        if (duration != null && answer.getDurationMs() == 0) {
+            answer.setDurationMs((int) (duration * 1000));
+        }
+        answerRepository.save(answer);
+    }
+
+    @Transactional
+    public void updateFeedback(String audioUrl, String feedback) {
+        Answer answer = answerRepository.findByAudioUrl(audioUrl)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with audioUrl: " + audioUrl));
+
+        answer.setFeedback(feedback);
         answerRepository.save(answer);
     }
 
@@ -198,6 +214,8 @@ public class AnswerService {
                 .mimeType(response.getMimeType())
                 .durationMs(response.getDurationMs())
                 .transcript(response.getTranscript())
+                .pauseAnalysis(response.getPauseAnalysis())
+                .feedback(response.getFeedback())
                 .uploadStatus(response.getUploadStatus())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())

@@ -7,9 +7,20 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: true
 
 jwt:
   secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
-  expiration: 86400000  # 24 hours in milliseconds
+  access-expiration: 900000       # 15분
+  refresh-expiration: 1209600000  # 14일
+
+internal:
+  api-key: test
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics" # 필요한 것만 명시
+        exclude: "env,beans,heapdump"
