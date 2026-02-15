@@ -15,6 +15,8 @@ public class AnswerMapper {
                 .mimeType(answer.getMimeType())
                 .durationMs(answer.getDurationMs())
                 .transcript(answer.getTranscript())
+                .pauseAnalysis(answer.getPauseAnalysis())
+                .feedback(answer.getFeedback())
                 .uploadStatus(answer.getUploadStatus())
                 .createdAt(answer.getCreatedAt())
                 .updatedAt(answer.getUpdatedAt())

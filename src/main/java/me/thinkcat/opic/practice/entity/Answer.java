@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "answers")
@@ -48,6 +50,18 @@ public class Answer extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String transcript;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "word_segments", columnDefinition = "jsonb")
+    private String wordSegments;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "pause_analysis", columnDefinition = "jsonb")
+    private String pauseAnalysis;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "feedback", columnDefinition = "jsonb")
+    private String feedback;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "upload_status", nullable = false, length = 10)

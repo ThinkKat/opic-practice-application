@@ -22,6 +22,8 @@ public class AnswerResponse {
     private String mimeType;
     private Integer durationMs;
     private String transcript;
+    private String pauseAnalysis;
+    private String feedback;
     private UploadStatus uploadStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

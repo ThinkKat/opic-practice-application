@@ -8,17 +8,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateTranscriptionRequest {
+public class UpdateFeedbackRequest {
 
     @NotBlank(message = "Audio URL must not be blank")
     private String audioUrl;
 
-    @NotBlank(message = "Transcription must not be blank")
-    private String transcription;
-
-    private String wordSegments;
-
-    private String pauseAnalysis;
-
-    private Double duration;
+    @NotBlank(message = "Feedback must not be blank")
+    private String feedback;
 }
