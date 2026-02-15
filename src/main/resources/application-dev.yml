@@ -25,6 +25,8 @@ jwt:
   access-expiration: 900000       # 15분
   refresh-expiration: 1209600000  # 14일
 
+internal:
+  api-key: test
 
 management:
   endpoints:

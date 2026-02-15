@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.request.CompleteAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.PrepareAnswerUploadRequest;
+import me.thinkcat.opic.practice.dto.request.UpdateFeedbackRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateTranscriptionRequest;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
 import me.thinkcat.opic.practice.dto.CommonResponse;
@@ -71,15 +72,34 @@ public class AnswerController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/transcription")
+    @PatchMapping("/internal/transcription")
     public ResponseEntity<CommonResponse<Void>> updateTranscription(
             @Valid @RequestBody UpdateTranscriptionRequest request) {
 
-        answerService.updateTranscription(request.getAudioUrl(), request.getTranscription());
+        answerService.updateTranscription(
+                request.getAudioUrl(),
+                request.getTranscription(),
+                request.getWordSegments(),
+                request.getPauseAnalysis(),
+                request.getDuration());
 
         CommonResponse<Void> response = CommonResponse.<Void>builder()
                 .success(true)
                 .message("Transcription updated successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/internal/feedback")
+    public ResponseEntity<CommonResponse<Void>> updateFeedback(
+            @Valid @RequestBody UpdateFeedbackRequest request) {
+
+        answerService.updateFeedback(request.getAudioUrl(), request.getFeedback());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Feedback updated successfully")
                 .build();
 
         return ResponseEntity.ok(response);
