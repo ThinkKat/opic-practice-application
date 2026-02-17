@@ -25,6 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(internalApiKeyInterceptor)
                 .addPathPatterns("/api/v1/answers/internal/**")
-                .addPathPatterns("/api/v1/questions/internal/**");
+                .addPathPatterns("/api/v1/questions/internal/**")
+                .addPathPatterns("/api/v1/drill-answers/internal/**");
     }
 }

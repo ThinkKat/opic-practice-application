@@ -20,4 +20,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
     Optional<Answer> findByAudioUrl(String audioUrl);
 
     List<Answer> findByUploadStatusAndUpdatedAtBefore(UploadStatus uploadStatus, LocalDateTime threshold);
+
+    List<Answer> findByQuestionId(Long questionId);
 }
