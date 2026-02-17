@@ -34,7 +34,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/actuator/**",
             "/api/v1/answers/internal/**",
-            "/api/v1/questions/internal/**"
+            "/api/v1/questions/internal/**",
+            "/api/v1/drill-answers/internal/**"
     };
 
     @Bean
@@ -60,7 +61,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://192.*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Internal-Api-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));

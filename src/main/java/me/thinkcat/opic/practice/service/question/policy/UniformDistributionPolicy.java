@@ -34,7 +34,6 @@ public class UniformDistributionPolicy implements QuestionSelectionPolicy {
             result.addAll(questions.subList(0, actualPick));
         }
 
-        Collections.shuffle(result);
         return result;
     }
 }
