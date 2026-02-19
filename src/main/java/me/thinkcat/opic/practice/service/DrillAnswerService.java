@@ -7,8 +7,10 @@ import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.entity.DrillAnswer;
+import me.thinkcat.opic.practice.entity.FeedbackFailureReason;
 import me.thinkcat.opic.practice.entity.StorageType;
 import me.thinkcat.opic.practice.entity.UploadStatus;
+import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
@@ -27,6 +29,7 @@ public class DrillAnswerService {
     private final DrillAnswerRepository drillAnswerRepository;
     private final QuestionRepository questionRepository;
     private final PresignedUrlService presignedUrlService;
+    private final FeedbackLambdaService feedbackLambdaService;
 
     @Transactional
     public PrepareDrillAnswerUploadResponse prepareDrillAnswerUpload(
@@ -51,7 +54,6 @@ public class DrillAnswerService {
                 .storageType(StorageType.S3)
                 .mimeType(contentType)
                 .durationMs(0)
-                .uploadStatus(UploadStatus.PENDING)
                 .build();
 
         DrillAnswer savedAnswer = drillAnswerRepository.save(drillAnswer);
@@ -66,7 +68,7 @@ public class DrillAnswerService {
     }
 
     @Transactional
-    public DrillAnswerResponse submitDrillAnswer(Long userId, Long drillAnswerId, Integer durationMs) {
+    public DrillAnswerResponse submitDrillAnswer(Long userId, UserRole userRole, Long drillAnswerId, Integer durationMs) {
         DrillAnswer answer = drillAnswerRepository.findById(drillAnswerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Drill answer not found with id: " + drillAnswerId));
 
@@ -74,13 +76,20 @@ public class DrillAnswerService {
             throw new ValidationException("Unauthorized access to drill answer");
         }
 
-        if (answer.getUploadStatus() == UploadStatus.SUCCESS) {
+        if (answer.isUploadSuccess()) {
             return resolveDrillAnswerResponse(answer);
         }
 
-        answer.setUploadStatus(UploadStatus.SUCCESS);
+        answer.markUploadSuccess();
         if (durationMs != null) {
             answer.setDurationMs(durationMs);
+        }
+
+        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN) {
+            answer.requestFeedback();
+            DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
+            feedbackLambdaService.invokeAsync(answer.getAudioUrl());
+            return resolveDrillAnswerResponse(updatedAnswer);
         }
 
         DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
@@ -90,8 +99,8 @@ public class DrillAnswerService {
     @Transactional(readOnly = true)
     public List<DrillAnswerResponse> getDrillAnswersByQuestion(Long userId, Long questionId) {
         List<DrillAnswer> answers = drillAnswerRepository
-                .findByUserIdAndQuestionIdAndUploadStatusOrderByCreatedAtDesc(
-                        userId, questionId, UploadStatus.SUCCESS);
+                .findByUserIdAndQuestionIdAndUploadStatusCodeOrderByCreatedAtDesc(
+                        userId, questionId, UploadStatus.SUCCESS.getCode());
 
         return answers.stream()
                 .map(this::resolveDrillAnswerResponse)
@@ -120,6 +129,22 @@ public class DrillAnswerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Drill answer not found with audioUrl: " + audioUrl));
 
         answer.setFeedback(feedback);
+        answer.completeFeedback();
+        drillAnswerRepository.save(answer);
+    }
+
+    @Transactional
+    public void updateFeedbackFailed(String audioUrl, FeedbackFailureReason reason) {
+        DrillAnswer answer = drillAnswerRepository.findByAudioUrl(audioUrl)
+                .orElseThrow(() -> new ResourceNotFoundException("Drill answer not found with audioUrl: " + audioUrl));
+
+        boolean isInvalid = reason == FeedbackFailureReason.NON_ENGLISH
+                || reason == FeedbackFailureReason.TOO_SHORT;
+        if (isInvalid) {
+            answer.invalidateFeedback();
+        } else {
+            answer.failFeedback();
+        }
         drillAnswerRepository.save(answer);
     }
 
@@ -137,6 +162,9 @@ public class DrillAnswerService {
                 .pauseAnalysis(response.getPauseAnalysis())
                 .feedback(response.getFeedback())
                 .uploadStatus(response.getUploadStatus())
+                .uploadStatusText(response.getUploadStatusText())
+                .feedbackStatus(response.getFeedbackStatus())
+                .feedbackStatusText(response.getFeedbackStatusText())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())
                 .build();
