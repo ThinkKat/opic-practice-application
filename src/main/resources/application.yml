@@ -7,6 +7,8 @@ aws:
     bucket: ${AWS_S3_BUCKET:opic-practice}
     region: ${AWS_REGION:ap-northeast-2}
     presigned-url-expiration: 900
+  lambda:
+    feedback-function-name: ${AWS_LAMBDA_FEEDBACK_FUNCTION_NAME:opic-practice-audio-transcriber}
 
 internal:
   api-key: ${INTERNAL_API_KEY}

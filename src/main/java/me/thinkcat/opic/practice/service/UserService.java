@@ -57,7 +57,7 @@ public class UserService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return TokenResponse.builder()

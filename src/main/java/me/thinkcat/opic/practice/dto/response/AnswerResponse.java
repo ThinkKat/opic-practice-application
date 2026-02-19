@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import me.thinkcat.opic.practice.entity.StorageType;
-import me.thinkcat.opic.practice.entity.UploadStatus;
 
 import java.time.LocalDateTime;
 
@@ -24,7 +23,10 @@ public class AnswerResponse {
     private String transcript;
     private String pauseAnalysis;
     private String feedback;
-    private UploadStatus uploadStatus;
+    private String uploadStatus;
+    private String uploadStatusText;
+    private String feedbackStatus;
+    private String feedbackStatusText;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

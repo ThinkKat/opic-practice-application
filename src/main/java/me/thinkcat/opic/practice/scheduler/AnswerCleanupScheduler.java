@@ -3,8 +3,11 @@ package me.thinkcat.opic.practice.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.entity.Answer;
+import me.thinkcat.opic.practice.entity.DrillAnswer;
+import me.thinkcat.opic.practice.entity.FeedbackStatus;
 import me.thinkcat.opic.practice.entity.UploadStatus;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
+import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,11 +17,10 @@ import java.util.List;
 /**
  * 유령 데이터 정리 Scheduler
  *
- * 30분 이상 PENDING 상태로 방치된 Answer 레코드를 FAILED로 변경합니다.
- *
  * ⚠️ 현재 비활성화 상태입니다.
- * 활성화하려면 아래 @Scheduled 어노테이션의 주석을 해제하고,
- * @EnableScheduling을 Application 클래스에 추가하세요.
+ * 활성화하려면:
+ * 1. 아래 @Scheduled 어노테이션의 주석을 해제
+ * 2. OpicPracticeApplication 클래스에 @EnableScheduling 추가
  */
 @Component
 @RequiredArgsConstructor
@@ -26,16 +28,13 @@ import java.util.List;
 public class AnswerCleanupScheduler {
 
     private final AnswerRepository answerRepository;
+    private final DrillAnswerRepository drillAnswerRepository;
 
     /**
      * 매일 새벽 3시에 실행 (비활성화 상태)
      * 30분 이상 PENDING 상태인 레코드를 FAILED로 변경
-     *
-     * 활성화 방법:
-     * 1. 아래 @Scheduled 어노테이션 주석 해제
-     * 2. OpicPracticeApplication 클래스에 @EnableScheduling 추가
      */
-    // @Scheduled(cron = "0 0 3 * * *")  // 비활성화: 주석 처리됨
+    // @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupOrphanedAnswers() {
         log.info("Starting orphaned answers cleanup task...");
@@ -43,7 +42,7 @@ public class AnswerCleanupScheduler {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
 
         List<Answer> orphanedAnswers = answerRepository
-                .findByUploadStatusAndUpdatedAtBefore(UploadStatus.PENDING, threshold);
+                .findByUploadStatusCodeAndUpdatedAtBefore(UploadStatus.PENDING.getCode(), threshold);
 
         if (orphanedAnswers.isEmpty()) {
             log.info("No orphaned answers found.");
@@ -51,7 +50,7 @@ public class AnswerCleanupScheduler {
         }
 
         orphanedAnswers.forEach(answer -> {
-            answer.setUploadStatus(UploadStatus.FAILED);
+            answer.markUploadFailed();
             log.warn("Marked answer {} as FAILED due to timeout (created: {}, sessionId: {})",
                     answer.getId(), answer.getCreatedAt(), answer.getSessionId());
         });
@@ -62,11 +61,38 @@ public class AnswerCleanupScheduler {
     }
 
     /**
-     * 수동 실행용 메서드 (테스트/관리용)
-     * 필요 시 REST API 엔드포인트를 통해 호출 가능
+     * 5분마다 실행 (비활성화 상태)
+     * 5분 이상 REQUESTED 상태로 방치된 피드백을 FAILED로 변경
      */
-    public void cleanupNow() {
-        log.info("Manual cleanup triggered");
-        cleanupOrphanedAnswers();
+    // @Scheduled(fixedDelay = 300000)
+    @Transactional
+    public void timeoutRequestedFeedbacks() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(5);
+
+        List<Answer> timedOutAnswers = answerRepository
+                .findByFeedbackStatusCodeAndUpdatedAtBefore(FeedbackStatus.REQUESTED.getCode(), threshold);
+
+        if (!timedOutAnswers.isEmpty()) {
+            timedOutAnswers.forEach(answer -> {
+                answer.failFeedback();
+                log.warn("Marked answer {} feedback as FAILED due to timeout (updatedAt: {})",
+                        answer.getId(), answer.getUpdatedAt());
+            });
+            answerRepository.saveAll(timedOutAnswers);
+            log.info("Timed out {} answer feedbacks", timedOutAnswers.size());
+        }
+
+        List<DrillAnswer> timedOutDrillAnswers = drillAnswerRepository
+                .findByFeedbackStatusCodeAndUpdatedAtBefore(FeedbackStatus.REQUESTED.getCode(), threshold);
+
+        if (!timedOutDrillAnswers.isEmpty()) {
+            timedOutDrillAnswers.forEach(drillAnswer -> {
+                drillAnswer.failFeedback();
+                log.warn("Marked drill answer {} feedback as FAILED due to timeout (updatedAt: {})",
+                        drillAnswer.getId(), drillAnswer.getUpdatedAt());
+            });
+            drillAnswerRepository.saveAll(timedOutDrillAnswers);
+            log.info("Timed out {} drill answer feedbacks", timedOutDrillAnswers.size());
+        }
     }
 }

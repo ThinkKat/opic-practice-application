@@ -9,6 +9,7 @@ import me.thinkcat.opic.practice.dto.request.PrepareDrillAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.SubmitDrillAnswerRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateDrillFeedbackRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateDrillTranscriptionRequest;
+import me.thinkcat.opic.practice.dto.request.UpdateFeedbackStatusRequest;
 import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.QuestionPracticeHistoryResponse;
@@ -62,6 +63,7 @@ public class DrillAnswerController {
 
         DrillAnswerResponse answerResponse = drillAnswerService.submitDrillAnswer(
                 user.getUserId(),
+                user.getRole(),
                 request.getDrillAnswerId(),
                 request.getDurationMs());
 
@@ -109,8 +111,22 @@ public class DrillAnswerController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/internal/feedback-status")
+    public ResponseEntity<CommonResponse<Void>> updateDrillFeedbackStatus(
+            @Valid @RequestBody UpdateFeedbackStatusRequest request) {
+
+        drillAnswerService.updateFeedbackFailed(request.getAudioUrl(), request.getReason());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Drill feedback status updated successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     @PatchMapping("/internal/transcription")
-    public ResponseEntity<CommonResponse<Void>> updateDrillTranscription(
+    public ResponseEntity<CommonResponse<Void>> g(
             @Valid @RequestBody UpdateDrillTranscriptionRequest request) {
 
         drillAnswerService.updateTranscription(

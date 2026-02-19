@@ -49,7 +49,7 @@ public class RefreshTokenService {
         // Rotation: 기존 삭제 → 새로 발급
         refreshTokenRepository.delete(refreshToken);
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId());
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken newRefreshToken = createRefreshToken(user);
 
         return TokenResponse.builder()

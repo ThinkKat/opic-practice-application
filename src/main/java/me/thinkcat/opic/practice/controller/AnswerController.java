@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.request.CompleteAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.PrepareAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateFeedbackRequest;
+import me.thinkcat.opic.practice.dto.request.UpdateFeedbackStatusRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateTranscriptionRequest;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
 import me.thinkcat.opic.practice.dto.CommonResponse;
@@ -60,6 +61,7 @@ public class AnswerController {
 
         AnswerResponse answerResponse = answerService.completeAnswerUpload(
                 user.getUserId(),
+                user.getRole(),
                 request.getAnswerId(),
                 request.getDurationMs());
 
@@ -100,6 +102,20 @@ public class AnswerController {
         CommonResponse<Void> response = CommonResponse.<Void>builder()
                 .success(true)
                 .message("Feedback updated successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/internal/feedback-status")
+    public ResponseEntity<CommonResponse<Void>> updateFeedbackStatus(
+            @Valid @RequestBody UpdateFeedbackStatusRequest request) {
+
+        answerService.updateFeedbackFailed(request.getAudioUrl(), request.getReason());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Feedback status updated successfully")
                 .build();
 
         return ResponseEntity.ok(response);

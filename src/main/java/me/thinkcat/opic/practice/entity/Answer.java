@@ -16,6 +16,8 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.sql.Types;
+
 @Entity
 @Table(name = "answers")
 @Getter
@@ -52,18 +54,88 @@ public class Answer extends BaseEntity {
     private String transcript;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "word_segments", columnDefinition = "jsonb")
+    @Column(name = "word_segments")
     private String wordSegments;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "pause_analysis", columnDefinition = "jsonb")
+    @Column(name = "pause_analysis")
     private String pauseAnalysis;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "feedback", columnDefinition = "jsonb")
+    @Column(name = "feedback")
     private String feedback;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "upload_status", nullable = false, length = 10)
-    private UploadStatus uploadStatus;
+    @JdbcTypeCode(Types.CHAR)
+    @Column(name = "upload_status_code", nullable = false, columnDefinition = "char(7)")
+    @Builder.Default
+    private String uploadStatusCode = UploadStatus.PENDING.getCode();
+
+    @JdbcTypeCode(Types.CHAR)
+    @Column(name = "feedback_status_code", nullable = false, columnDefinition = "char(7)")
+    @Builder.Default
+    private String feedbackStatusCode = FeedbackStatus.NONE.getCode();
+
+    public UploadStatus getUploadStatus() {
+        return UploadStatus.fromCode(uploadStatusCode);
+    }
+
+    public void markUploadSuccess() {
+        this.uploadStatusCode = UploadStatus.SUCCESS.getCode();
+    }
+
+    public void markUploadFailed() {
+        this.uploadStatusCode = UploadStatus.FAILED.getCode();
+    }
+
+    public boolean isUploadPending() {
+        return getUploadStatus() == UploadStatus.PENDING;
+    }
+
+    public boolean isUploadSuccess() {
+        return getUploadStatus() == UploadStatus.SUCCESS;
+    }
+
+    public boolean isUploadFailed() {
+        return getUploadStatus() == UploadStatus.FAILED;
+    }
+
+    public FeedbackStatus getFeedbackStatus() {
+        return FeedbackStatus.fromCode(feedbackStatusCode);
+    }
+
+    public void requestFeedback() {
+        this.feedbackStatusCode = FeedbackStatus.REQUESTED.getCode();
+    }
+
+    public void completeFeedback() {
+        this.feedbackStatusCode = FeedbackStatus.COMPLETED.getCode();
+    }
+
+    public void failFeedback() {
+        this.feedbackStatusCode = FeedbackStatus.FAILED.getCode();
+    }
+
+    public void invalidateFeedback() {
+        this.feedbackStatusCode = FeedbackStatus.INVALID.getCode();
+    }
+
+    public boolean isFeedbackNone() {
+        return getFeedbackStatus() == FeedbackStatus.NONE;
+    }
+
+    public boolean isFeedbackRequested() {
+        return getFeedbackStatus() == FeedbackStatus.REQUESTED;
+    }
+
+    public boolean isFeedbackCompleted() {
+        return getFeedbackStatus() == FeedbackStatus.COMPLETED;
+    }
+
+    public boolean isFeedbackFailed() {
+        return getFeedbackStatus() == FeedbackStatus.FAILED;
+    }
+
+    public boolean isFeedbackInvalid() {
+        return getFeedbackStatus() == FeedbackStatus.INVALID;
+    }
 }

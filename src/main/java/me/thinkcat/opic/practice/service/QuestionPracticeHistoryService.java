@@ -56,7 +56,7 @@ public class QuestionPracticeHistoryService {
 
         // 세션 기반 답변 조회
         List<Answer> sessionAnswers = answerRepository.findByQuestionId(questionId).stream()
-                .filter(a -> a.getUploadStatus() == UploadStatus.SUCCESS)
+                .filter(Answer::isUploadSuccess)
                 .collect(Collectors.toList());
 
         List<Long> sessionIds = sessionAnswers.stream()
@@ -82,8 +82,8 @@ public class QuestionPracticeHistoryService {
 
         // 드릴 기반 답변 조회
         List<DrillAnswer> drillAnswers = drillAnswerRepository
-                .findByUserIdAndQuestionIdAndUploadStatusOrderByCreatedAtDesc(
-                        userId, questionId, UploadStatus.SUCCESS);
+                .findByUserIdAndQuestionIdAndUploadStatusCodeOrderByCreatedAtDesc(
+                        userId, questionId, UploadStatus.SUCCESS.getCode());
 
         List<DrillAnswerResponse> drillAnswerResponses = drillAnswers.stream()
                 .map(this::resolveDrillAnswerResponse)
@@ -121,6 +121,9 @@ public class QuestionPracticeHistoryService {
                 .pauseAnalysis(response.getPauseAnalysis())
                 .feedback(response.getFeedback())
                 .uploadStatus(response.getUploadStatus())
+                .uploadStatusText(response.getUploadStatusText())
+                .feedbackStatus(response.getFeedbackStatus())
+                .feedbackStatusText(response.getFeedbackStatusText())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())
                 .build();
@@ -140,6 +143,9 @@ public class QuestionPracticeHistoryService {
                 .pauseAnalysis(response.getPauseAnalysis())
                 .feedback(response.getFeedback())
                 .uploadStatus(response.getUploadStatus())
+                .uploadStatusText(response.getUploadStatusText())
+                .feedbackStatus(response.getFeedbackStatus())
+                .feedbackStatusText(response.getFeedbackStatusText())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())
                 .build();

@@ -3,6 +3,7 @@ package me.thinkcat.opic.practice.config.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import me.thinkcat.opic.practice.entity.UserRole;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,12 +30,12 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String username, Long userId) {
-        return buildToken(username, userId, accessTokenValidity);
+    public String generateAccessToken(String username, Long userId, UserRole role) {
+        return buildToken(username, userId, role, accessTokenValidity);
     }
 
     public String generateRefreshToken(String username, Long userId) {
-        return buildToken(username, userId, refreshTokenValidity);
+        return buildToken(username, userId, null, refreshTokenValidity);
     }
 
     public long getAccessTokenValidityInSeconds() {
@@ -45,17 +46,31 @@ public class JwtTokenProvider {
         return refreshTokenValidity;
     }
 
-    private String buildToken(String username, Long userId, long validityInMilliseconds) {
+    private String buildToken(String username, Long userId, UserRole role, long validityInMilliseconds) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(username)
                 .claim("userId", userId)
                 .issuedAt(now)
-                .expiration(validity)
-                .signWith(key, Jwts.SIG.HS256)
-                .compact();
+                .expiration(validity);
+
+        if (role != null) {
+            builder.claim("role", role.getCode());
+        }
+
+        return builder.signWith(key, Jwts.SIG.HS256).compact();
+    }
+
+    public UserRole getRoleFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        String role = claims.get("role", String.class);
+        return role != null ? UserRole.fromCode(role) : UserRole.FREE;
     }
 
     /**

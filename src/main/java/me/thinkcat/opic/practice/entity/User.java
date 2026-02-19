@@ -2,7 +2,10 @@ package me.thinkcat.opic.practice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Where;
+
+import java.sql.Types;
 
 @Entity
 @Table(name = "users")
@@ -26,4 +29,13 @@ public class User extends BaseEntity {
 
     @Column(unique = true)
     private String email;
+
+    @JdbcTypeCode(Types.CHAR)
+    @Column(name = "user_role_code", nullable = false, columnDefinition = "char(7)")
+    @Builder.Default
+    private String userRoleCode = UserRole.FREE.getCode();
+
+    public UserRole getUserRole() {
+        return UserRole.fromCode(userRoleCode);
+    }
 }
