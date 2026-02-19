@@ -88,7 +88,7 @@ public class DrillAnswerService {
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN) {
             answer.requestFeedback();
             DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
-            feedbackLambdaService.invokeAsync(answer.getAudioUrl());
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl());
             return resolveDrillAnswerResponse(updatedAnswer);
         }
 

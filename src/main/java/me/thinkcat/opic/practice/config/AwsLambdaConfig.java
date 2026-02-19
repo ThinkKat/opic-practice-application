@@ -15,7 +15,8 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 @Setter
 public class AwsLambdaConfig {
 
-    private String feedbackFunctionName;
+    private String sessionFeedbackFunctionName;
+    private String drillAnswerFeedbackFunctionName;
 
     @Bean
     public LambdaAsyncClient lambdaAsyncClient(PresignedUrlProperties s3Properties) {
