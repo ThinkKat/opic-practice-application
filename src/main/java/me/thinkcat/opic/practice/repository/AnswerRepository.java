@@ -1,7 +1,6 @@
 package me.thinkcat.opic.practice.repository;
 
 import me.thinkcat.opic.practice.entity.Answer;
-import me.thinkcat.opic.practice.entity.UploadStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +18,9 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     Optional<Answer> findByAudioUrl(String audioUrl);
 
-    List<Answer> findByUploadStatusAndUpdatedAtBefore(UploadStatus uploadStatus, LocalDateTime threshold);
+    List<Answer> findByUploadStatusCodeAndUpdatedAtBefore(String uploadStatusCode, LocalDateTime threshold);
+
+    List<Answer> findByFeedbackStatusCodeAndUpdatedAtBefore(String feedbackStatusCode, LocalDateTime threshold);
 
     List<Answer> findByQuestionId(Long questionId);
 }
