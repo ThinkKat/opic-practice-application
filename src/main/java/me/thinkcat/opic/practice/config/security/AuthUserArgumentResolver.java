@@ -2,8 +2,9 @@ package me.thinkcat.opic.practice.config.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.config.security.annotation.AuthUser;
+import me.thinkcat.opic.practice.entity.UserRole;
+import me.thinkcat.opic.practice.exception.ValidationException;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -40,10 +41,12 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
 
         Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
         String username = jwtTokenProvider.getUsernameFromToken(jwt);
+        UserRole role = jwtTokenProvider.getRoleFromToken(jwt);
 
         return AuthUserInfo.builder()
                 .userId(userId)
                 .username(username)
+                .role(role)
                 .build();
     }
 
