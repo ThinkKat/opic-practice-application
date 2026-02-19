@@ -97,7 +97,7 @@ public class AnswerService {
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN) {
             answer.requestFeedback();
             Answer updatedAnswer = answerRepository.save(answer);
-            feedbackLambdaService.invokeAsync(answer.getAudioUrl());
+            feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl());
             return resolveAnswerResponse(updatedAnswer);
         }
 

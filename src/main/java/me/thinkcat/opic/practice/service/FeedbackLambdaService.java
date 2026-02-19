@@ -21,7 +21,15 @@ public class FeedbackLambdaService {
     private final AwsLambdaConfig lambdaConfig;
     private final PresignedUrlProperties s3Properties;
 
-    public void invokeAsync(String audioUrl) {
+    public void invokeSessionFeedbackAsync(String audioUrl) {
+        invokeAsync(audioUrl, lambdaConfig.getSessionFeedbackFunctionName());
+    }
+
+    public void invokeDrillAnswerFeedbackAsync(String audioUrl) {
+        invokeAsync(audioUrl, lambdaConfig.getDrillAnswerFeedbackFunctionName());
+    }
+
+    private void invokeAsync(String audioUrl, String lambdaFunctionName) {
         String payload = String.format(
                 "{\"source\":\"WAS\",\"bucket\":\"%s\",\"audioUrl\":\"%s\"}",
                 s3Properties.getBucket(),
@@ -29,7 +37,7 @@ public class FeedbackLambdaService {
         );
 
         InvokeRequest request = InvokeRequest.builder()
-                .functionName(lambdaConfig.getFeedbackFunctionName())
+                .functionName(lambdaFunctionName)
                 .invocationType(InvocationType.EVENT)
                 .payload(SdkBytes.fromString(payload, StandardCharsets.UTF_8))
                 .build();
