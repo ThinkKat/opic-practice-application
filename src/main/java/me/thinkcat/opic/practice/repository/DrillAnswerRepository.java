@@ -42,10 +42,11 @@ public interface DrillAnswerRepository extends JpaRepository<DrillAnswer, Long> 
             FROM DrillAnswer d
             WHERE d.questionId IN :questionIds
               AND d.userId = :userId
-              AND d.uploadStatusCode = 'SUCCESS'
+              AND d.uploadStatusCode = :uploadStatusCode
             GROUP BY d.questionId
             """)
     List<QuestionPracticeCountProjection> countByQuestionIdsAndUserId(
             @Param("questionIds") List<Long> questionIds,
-            @Param("userId") Long userId);
+            @Param("userId") Long userId,
+            @Param("uploadStatusCode") String uploadStatusCode);
 }
