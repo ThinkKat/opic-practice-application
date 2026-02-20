@@ -20,4 +20,5 @@ public class QuestionResponse {
     private Integer durationMs;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private int practiceCount;
 }
