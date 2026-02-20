@@ -6,20 +6,27 @@ import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
 import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
+import me.thinkcat.opic.practice.dto.response.RecentDrillQuestionResponse;
+import me.thinkcat.opic.practice.entity.Category;
 import me.thinkcat.opic.practice.entity.DrillAnswer;
 import me.thinkcat.opic.practice.entity.FeedbackFailureReason;
+import me.thinkcat.opic.practice.entity.Question;
 import me.thinkcat.opic.practice.entity.StorageType;
 import me.thinkcat.opic.practice.entity.UploadStatus;
 import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
+import me.thinkcat.opic.practice.repository.CategoryRepository;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
+import me.thinkcat.opic.practice.repository.RecentDrillQuestionProjection;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +35,7 @@ public class DrillAnswerService {
 
     private final DrillAnswerRepository drillAnswerRepository;
     private final QuestionRepository questionRepository;
+    private final CategoryRepository categoryRepository;
     private final PresignedUrlService presignedUrlService;
     private final FeedbackLambdaService feedbackLambdaService;
 
@@ -94,6 +102,42 @@ public class DrillAnswerService {
 
         DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
         return resolveDrillAnswerResponse(updatedAnswer);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecentDrillQuestionResponse> getRecentlyPracticedQuestions(Long userId) {
+        List<RecentDrillQuestionProjection> projections = drillAnswerRepository
+                .findRecentlyPracticedQuestions(userId, UploadStatus.SUCCESS.getCode());
+
+        List<Long> questionIds = projections.stream()
+                .map(RecentDrillQuestionProjection::getQuestionId)
+                .toList();
+
+        Map<Long, Question> questionMap = questionRepository.findAllById(questionIds).stream()
+                .collect(Collectors.toMap(Question::getId, Function.identity()));
+
+        List<Long> categoryIds = questionMap.values().stream()
+                .map(Question::getCategoryId)
+                .distinct()
+                .toList();
+
+        Map<Long, String> categoryNameMap = categoryRepository.findAllById(categoryIds).stream()
+                .collect(Collectors.toMap(Category::getId, Category::getName));
+
+        return projections.stream()
+                .filter(p -> questionMap.containsKey(p.getQuestionId()))
+                .map(p -> {
+                    Question question = questionMap.get(p.getQuestionId());
+                    String categoryName = categoryNameMap.get(question.getCategoryId());
+                    return RecentDrillQuestionResponse.builder()
+                            .questionId(p.getQuestionId().toString())
+                            .questionText(question.getQuestion())
+                            .categoryName(categoryName)
+                            .lastPracticedAt(p.getLastPracticedAt())
+                            .drillPracticeCount(p.getDrillPracticeCount())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
