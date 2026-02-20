@@ -36,4 +36,16 @@ public interface DrillAnswerRepository extends JpaRepository<DrillAnswer, Long> 
     List<RecentDrillQuestionProjection> findRecentlyPracticedQuestions(
             @Param("userId") Long userId,
             @Param("uploadStatusCode") String uploadStatusCode);
+
+    @Query("""
+            SELECT d.questionId AS questionId, COUNT(d) AS count
+            FROM DrillAnswer d
+            WHERE d.questionId IN :questionIds
+              AND d.userId = :userId
+              AND d.uploadStatusCode = 'SUCCESS'
+            GROUP BY d.questionId
+            """)
+    List<QuestionPracticeCountProjection> countByQuestionIdsAndUserId(
+            @Param("questionIds") List<Long> questionIds,
+            @Param("userId") Long userId);
 }

@@ -1,6 +1,8 @@
 package me.thinkcat.opic.practice.controller;
 
 import lombok.RequiredArgsConstructor;
+import me.thinkcat.opic.practice.config.security.AuthUserInfo;
+import me.thinkcat.opic.practice.config.security.annotation.AuthUser;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.QuestionResponse;
 import me.thinkcat.opic.practice.service.QuestionService;
@@ -23,18 +25,19 @@ public class QuestionController {
     @GetMapping
     public ResponseEntity<CommonResponse<List<QuestionResponse>>> getQuestions(
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long typeId) {
+            @RequestParam(required = false) Long typeId,
+            @AuthUser AuthUserInfo user) {
 
         List<QuestionResponse> questions;
 
         if (categoryId != null && typeId != null) {
-            questions = questionService.getQuestionsByCategoryIdAndTypeId(categoryId, typeId);
+            questions = questionService.getQuestionsByCategoryIdAndTypeId(categoryId, typeId, user.getUserId());
         } else if (categoryId != null) {
-            questions = questionService.getQuestionsByCategoryId(categoryId);
+            questions = questionService.getQuestionsByCategoryId(categoryId, user.getUserId());
         } else if (typeId != null) {
-            questions = questionService.getQuestionsByTypeId(typeId);
+            questions = questionService.getQuestionsByTypeId(typeId, user.getUserId());
         } else {
-            questions = questionService.getAllQuestions();
+            questions = questionService.getAllQuestions(user.getUserId());
         }
 
         CommonResponse<List<QuestionResponse>> response = CommonResponse.<List<QuestionResponse>>builder()

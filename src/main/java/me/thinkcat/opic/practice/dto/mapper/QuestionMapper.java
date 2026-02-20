@@ -6,6 +6,10 @@ import me.thinkcat.opic.practice.entity.Question;
 public class QuestionMapper {
 
     public static QuestionResponse toResponse(Question question) {
+        return toResponse(question, 0);
+    }
+
+    public static QuestionResponse toResponse(Question question, int practiceCount) {
         return QuestionResponse.builder()
                 .id(question.getId() != null ? question.getId().toString() : null)
                 .categoryId(question.getCategoryId() != null ? question.getCategoryId().toString() : null)
@@ -15,6 +19,7 @@ public class QuestionMapper {
                 .durationMs(question.getDurationMs())
                 .createdAt(question.getCreatedAt())
                 .updatedAt(question.getUpdatedAt())
+                .practiceCount(practiceCount)
                 .build();
     }
 }
