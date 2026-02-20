@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.mapper.QuestionMapper;
 import me.thinkcat.opic.practice.dto.response.QuestionResponse;
 import me.thinkcat.opic.practice.entity.Question;
+import me.thinkcat.opic.practice.entity.UploadStatus;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
@@ -64,14 +65,16 @@ public class QuestionService {
                 .map(Question::getId)
                 .collect(Collectors.toList());
 
+        String successCode = UploadStatus.SUCCESS.getCode();
+
         Map<Long, Long> sessionCounts = answerRepository
-                .countByQuestionIds(questionIds).stream()
+                .countByQuestionIds(questionIds, successCode).stream()
                 .collect(Collectors.toMap(
                         QuestionPracticeCountProjection::getQuestionId,
                         QuestionPracticeCountProjection::getCount));
 
         Map<Long, Long> drillCounts = drillAnswerRepository
-                .countByQuestionIdsAndUserId(questionIds, userId).stream()
+                .countByQuestionIdsAndUserId(questionIds, userId, successCode).stream()
                 .collect(Collectors.toMap(
                         QuestionPracticeCountProjection::getQuestionId,
                         QuestionPracticeCountProjection::getCount));

@@ -30,9 +30,10 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
             SELECT a.questionId AS questionId, COUNT(a) AS count
             FROM Answer a
             WHERE a.questionId IN :questionIds
-              AND a.uploadStatusCode = 'SUCCESS'
+              AND a.uploadStatusCode = :uploadStatusCode
             GROUP BY a.questionId
             """)
     List<QuestionPracticeCountProjection> countByQuestionIds(
-            @Param("questionIds") List<Long> questionIds);
+            @Param("questionIds") List<Long> questionIds,
+            @Param("uploadStatusCode") String uploadStatusCode);
 }
