@@ -35,3 +35,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Send Discord Webhook
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\": \"빌드 결과: ${{ job.status }}\n저장소: ${{ github.repository }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
+        if: always()
