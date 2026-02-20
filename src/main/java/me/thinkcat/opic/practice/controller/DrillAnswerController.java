@@ -13,6 +13,7 @@ import me.thinkcat.opic.practice.dto.request.UpdateFeedbackStatusRequest;
 import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.QuestionPracticeHistoryResponse;
+import me.thinkcat.opic.practice.dto.response.RecentDrillQuestionResponse;
 import me.thinkcat.opic.practice.service.DrillAnswerService;
 import me.thinkcat.opic.practice.service.QuestionPracticeHistoryService;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +73,23 @@ public class DrillAnswerController {
                 .result(answerResponse)
                 .message("Drill answer submitted successfully")
                 .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/recently-practiced-questions")
+    public ResponseEntity<CommonResponse<List<RecentDrillQuestionResponse>>> getRecentlyPracticedQuestions(
+            @AuthUser AuthUserInfo user) {
+
+        List<RecentDrillQuestionResponse> result = drillAnswerService
+                .getRecentlyPracticedQuestions(user.getUserId());
+
+        CommonResponse<List<RecentDrillQuestionResponse>> response =
+                CommonResponse.<List<RecentDrillQuestionResponse>>builder()
+                        .success(true)
+                        .result(result)
+                        .message("Recently practiced questions retrieved successfully")
+                        .build();
 
         return ResponseEntity.ok(response);
     }
