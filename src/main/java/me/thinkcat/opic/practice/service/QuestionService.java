@@ -68,7 +68,7 @@ public class QuestionService {
         String successCode = UploadStatus.SUCCESS.getCode();
 
         Map<Long, Long> sessionCounts = answerRepository
-                .countByQuestionIds(questionIds, successCode).stream()
+                .countByQuestionIdsAndUserId(questionIds, userId, successCode).stream()
                 .collect(Collectors.toMap(
                         QuestionPracticeCountProjection::getQuestionId,
                         QuestionPracticeCountProjection::getCount));
