@@ -8,6 +8,7 @@ import me.thinkcat.opic.practice.dto.request.LogoutRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
+import me.thinkcat.opic.practice.dto.response.MeResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
 import me.thinkcat.opic.practice.service.RefreshTokenService;
 import me.thinkcat.opic.practice.service.UserService;
@@ -63,12 +64,12 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<CommonResponse<UserResponse>> getCurrentUser(Authentication authentication) {
-        UserResponse userResponse = userService.getUserByUsername(authentication.getName());
+    public ResponseEntity<CommonResponse<MeResponse>> getCurrentUser(Authentication authentication) {
+        MeResponse meResponse = userService.getMe(authentication.getName());
 
-        CommonResponse<UserResponse> response = CommonResponse.<UserResponse>builder()
+        CommonResponse<MeResponse> response = CommonResponse.<MeResponse>builder()
                 .success(true)
-                .result(userResponse)
+                .result(meResponse)
                 .message("User retrieved successfully")
                 .build();
 

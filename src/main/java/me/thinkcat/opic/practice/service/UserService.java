@@ -5,6 +5,7 @@ import me.thinkcat.opic.practice.dto.mapper.UserMapper;
 import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
+import me.thinkcat.opic.practice.dto.response.MeResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
 import me.thinkcat.opic.practice.entity.RefreshToken;
 import me.thinkcat.opic.practice.entity.User;
@@ -74,6 +75,17 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
         return UserMapper.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public MeResponse getMe(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        return MeResponse.builder()
+                .id(user.getId() != null ? user.getId().toString() : null)
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
     }
 
     private void validatePassword(String password) {
