@@ -17,6 +17,7 @@ import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AnswerService {
+
+    @Value("${feature.ai-for-free}")
+    private boolean aiFreeEnabled;
 
     private final AnswerRepository answerRepository;
     private final SessionRepository sessionRepository;
@@ -94,7 +98,7 @@ public class AnswerService {
             answer.setDurationMs(durationMs);
         }
 
-        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN) {
+        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || aiFreeEnabled) {
             answer.requestFeedback();
             Answer updatedAnswer = answerRepository.save(answer);
             feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl());
