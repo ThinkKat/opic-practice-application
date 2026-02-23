@@ -41,6 +41,3 @@ logging:
   file:
     path: ${LOG_PATH}
     name: ${LOG_NAME}
-
-feature:
-  ai-for-free: ${FEATURE_AI_FOR_FREE:true}

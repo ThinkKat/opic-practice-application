@@ -20,7 +20,6 @@ import me.thinkcat.opic.practice.repository.CategoryRepository;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.RecentDrillQuestionProjection;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DrillAnswerService {
 
-    @Value("${feature.ai-for-free}")
-    private boolean aiFreeEnabled;
+    private final FeatureFlagService featureFlagService;
 
     private final DrillAnswerRepository drillAnswerRepository;
     private final QuestionRepository questionRepository;
@@ -97,7 +95,7 @@ public class DrillAnswerService {
             answer.setDurationMs(durationMs);
         }
 
-        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || aiFreeEnabled) {
+        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
             answer.requestFeedback();
             DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
             feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl());

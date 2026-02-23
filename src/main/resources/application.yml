@@ -14,9 +14,6 @@ aws:
 internal:
   api-key: ${INTERNAL_API_KEY}
 
-feature:
-  ai-for-free: true  # 결제 모듈 추가 시 false로 전환
-
 file:
   allowed-types:
     - audio/mpeg
