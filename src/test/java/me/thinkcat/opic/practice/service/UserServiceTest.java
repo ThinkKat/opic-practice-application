@@ -16,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,7 +45,7 @@ class UserServiceTest {
         given(userRepository.existsByUsername(any())).willReturn(false);
 
         assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest("user", password, "a@b.com")))
+                userService.register(new UserRegisterRequest("user", password, "a@b.com", LocalDateTime.now(), LocalDateTime.now())))
                 .isInstanceOf(ValidationException.class);
     }
 
@@ -55,7 +57,7 @@ class UserServiceTest {
         given(userRepository.save(any(User.class))).willReturn(saved);
 
         UserResponse response = userService.register(
-                new UserRegisterRequest("user", "Password1@", "user@example.com"));
+                new UserRegisterRequest("user", "Password1@", "user@example.com", LocalDateTime.now(), LocalDateTime.now()));
 
         assertThat(response.getUsername()).isEqualTo("user");
     }
@@ -71,7 +73,7 @@ class UserServiceTest {
         given(userRepository.existsByUsername(any())).willReturn(false);
 
         assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest("user", "Password1@", email)))
+                userService.register(new UserRegisterRequest("user", "Password1@", email, LocalDateTime.now(), LocalDateTime.now())))
                 .isInstanceOf(ValidationException.class);
     }
 }

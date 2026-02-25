@@ -42,6 +42,8 @@ public class UserService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
+                .termsAgreedAt(request.getTermsAgreedAt())
+                .privacyAgreedAt(request.getPrivacyAgreedAt())
                 .build();
 
         User savedUser = userRepository.save(user);

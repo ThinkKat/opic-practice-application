@@ -1,10 +1,13 @@
 package me.thinkcat.opic.practice.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -20,4 +23,10 @@ public class UserRegisterRequest {
     private String password;
 
     private String email;
+
+    @NotNull(message = "Terms agreement timestamp is required")
+    private LocalDateTime termsAgreedAt;
+
+    @NotNull(message = "Privacy agreement timestamp is required")
+    private LocalDateTime privacyAgreedAt;
 }
