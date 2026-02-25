@@ -88,6 +88,15 @@ public class UserService {
                 .build();
     }
 
+    @Transactional
+    public void withdraw(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        refreshTokenService.revokeAllByUser(user);
+        user.softDelete();
+        userRepository.save(user);
+    }
+
     private void validatePassword(String password) {
         String pattern = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
         if (!password.matches(pattern)) {

@@ -65,4 +65,9 @@ public class RefreshTokenService {
         refreshTokenRepository.findByToken(refreshTokenValue)
                 .ifPresent(refreshTokenRepository::delete);
     }
+
+    @Transactional
+    public void revokeAllByUser(User user) {
+        refreshTokenRepository.deleteByUserId(user.getId());
+    }
 }
