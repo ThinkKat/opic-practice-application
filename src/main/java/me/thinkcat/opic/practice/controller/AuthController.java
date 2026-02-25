@@ -87,4 +87,16 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/withdrawal")
+    public ResponseEntity<CommonResponse<Void>> withdrawal(Authentication authentication) {
+        userService.withdraw(authentication.getName());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Account deleted successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 }
