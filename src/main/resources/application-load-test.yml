@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/opic_practice_loadtest
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/opic_practice_loadtest}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -18,17 +18,31 @@ logging:
   level:
     root: WARN
     me.thinkcat.opic: INFO
+  file:
+    path: ${LOG_PATH:/tmp/logs/was}
+    name: ${LOG_NAME:application}
 
 jwt:
-  secret: load-test-secret-key-this-must-be-at-least-256-bits-long-for-hmac-sha
-  access-expiration: 3600000    # 1시간 (테스트 중 만료 방지)
-  refresh-expiration: 86400000
+  secret: ${JWT_SECRET:load-test-secret-key-this-must-be-at-least-256-bits-long-for-hmac-sha}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:3600000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:86400000}
 
 internal:
-  api-key: load-test-key
+  api-key: ${INTERNAL_API_KEY:load-test-key}
+
+aws:
+  s3:
+    bucket: opic-practice-test
+  lambda:
+    session-feedback-function-name: opic-transcription-test
+    drill-answer-feedback-function-name: drill-transcription-test
 
 management:
   endpoints:
     web:
       exposure:
-        include: "health,metrics"
+        include: "health,prometheus"
+  metrics:
+    tags:
+      application: opic-practice
+      env: load-test
