@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/opic_practice_loadtest
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+logging:
+  level:
+    root: WARN
+    me.thinkcat.opic: INFO
+
+jwt:
+  secret: load-test-secret-key-this-must-be-at-least-256-bits-long-for-hmac-sha
+  access-expiration: 3600000    # 1시간 (테스트 중 만료 방지)
+  refresh-expiration: 86400000
+
+internal:
+  api-key: load-test-key
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,metrics"
