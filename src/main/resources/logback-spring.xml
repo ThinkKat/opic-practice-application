@@ -2,7 +2,7 @@
     <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="/tmp/logs"/>
     <springProperty scope="context" name="LOG_FILE_NAME" source="logging.file.name" defaultValue="application"/>
 
-    <springProfile name="prod">
+    <springProfile name="prod,load-test">
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
             <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
