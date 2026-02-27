@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.entity.RefreshToken;
 import me.thinkcat.opic.practice.entity.User;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
@@ -37,10 +39,15 @@ public class RefreshTokenService {
     @Transactional
     public TokenResponse refreshTokens(String refreshTokenValue) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
-                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+                .orElseThrow(() -> {
+                    log.warn("event=token_rotation_fail | reason=invalid_token");
+                    return new UnauthorizedException("Invalid refresh token");
+                });
 
         if (refreshToken.isExpired()) {
             refreshTokenRepository.delete(refreshToken);
+            log.warn("event=token_rotation_fail | who={} | reason=expired",
+                    refreshToken.getUser().getUsername());
             throw new TokenExpiredException("Refresh token expired");
         }
 
@@ -52,6 +59,7 @@ public class RefreshTokenService {
         String newAccessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken newRefreshToken = createRefreshToken(user);
 
+        log.info("event=token_rotation_success | who={}", user.getUsername());
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken.getToken())
@@ -63,11 +71,15 @@ public class RefreshTokenService {
     @Transactional
     public void revokeRefreshToken(String refreshTokenValue) {
         refreshTokenRepository.findByToken(refreshTokenValue)
-                .ifPresent(refreshTokenRepository::delete);
+                .ifPresent(token -> {
+                    log.info("event=token_revoke | who={}", token.getUser().getUsername());
+                    refreshTokenRepository.delete(token);
+                });
     }
 
     @Transactional
     public void revokeAllByUser(User user) {
+        log.info("event=token_revoke_all | who={}", user.getUsername());
         refreshTokenRepository.deleteByUserId(user.getId());
     }
 }

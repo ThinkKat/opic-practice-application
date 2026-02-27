@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.mapper.UserMapper;
 import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -48,6 +50,7 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
+        log.info("event=register | who={}", request.getUsername());
         return UserMapper.toResponse(savedUser);
     }
 
@@ -63,6 +66,7 @@ public class UserService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
+        log.info("event=login_success | who={}", request.getUsername());
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
@@ -97,6 +101,7 @@ public class UserService {
         refreshTokenService.revokeAllByUser(user);
         user.softDelete();
         userRepository.save(user);
+        log.warn("event=withdraw | who={}", username);
     }
 
     private void validatePassword(String password) {

@@ -1,5 +1,6 @@
 package me.thinkcat.opic.practice.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.request.AccessTokenRefreshRequest;
@@ -38,7 +39,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<CommonResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<CommonResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request,
+                                                               HttpServletRequest httpRequest) {
+        httpRequest.setAttribute("auth-username", request.getUsername());
         TokenResponse tokenResponse = userService.login(request);
 
         CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
