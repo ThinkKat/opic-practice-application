@@ -43,4 +43,11 @@ public class UserCleanupScheduler {
 
         log.info("[UserCleanup] Hard deleted {} withdrawn users.", targets.size());
     }
+
+    @Scheduled(cron = "0 0 4 * * *")
+    @Transactional
+    public void cleanupExpiredRefreshTokens() {
+        refreshTokenRepository.deleteAllExpired(LocalDateTime.now());
+        log.info("[UserCleanup] Expired refresh tokens deleted.");
+    }
 }

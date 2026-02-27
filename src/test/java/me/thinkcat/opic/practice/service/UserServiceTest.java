@@ -1,8 +1,11 @@
 package me.thinkcat.opic.practice.service;
 
 import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
+import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
+import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
+import me.thinkcat.opic.practice.entity.RefreshToken;
 import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.UserRepository;
@@ -17,6 +20,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -60,6 +64,25 @@ class UserServiceTest {
                 new UserRegisterRequest("user", "Password1@", "user@example.com", LocalDateTime.now(), LocalDateTime.now()));
 
         assertThat(response.getUsername()).isEqualTo("user");
+    }
+
+    @Test
+    void 동일_사용자_연속_두번_로그인시_서로다른_refreshToken_반환() {
+        User user = User.builder().id(1L).username("user").build();
+        RefreshToken firstToken = RefreshToken.builder().token("refresh-token-aaa").build();
+        RefreshToken secondToken = RefreshToken.builder().token("refresh-token-bbb").build();
+
+        given(userRepository.findByUsername("user")).willReturn(Optional.of(user));
+        given(jwtTokenProvider.generateAccessToken(any(), any(), any())).willReturn("access-token");
+        given(jwtTokenProvider.getAccessTokenValidityInSeconds()).willReturn(3600L);
+        given(refreshTokenService.createRefreshToken(user))
+                .willReturn(firstToken)
+                .willReturn(secondToken);
+
+        TokenResponse response1 = userService.login(new LoginRequest("user", "Password1@"));
+        TokenResponse response2 = userService.login(new LoginRequest("user", "Password1@"));
+
+        assertThat(response1.getRefreshToken()).isNotEqualTo(response2.getRefreshToken());
     }
 
     @ParameterizedTest
