@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -41,8 +43,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-                case EXPIRED -> request.setAttribute("auth-error", "ACCESS_TOKEN_EXPIRED");
-                case INVALID -> request.setAttribute("auth-error", "INVALID_TOKEN");
+                case EXPIRED -> {
+                    log.debug("event=access_token_expired | path={}", request.getRequestURI());
+                    request.setAttribute("auth-error", "ACCESS_TOKEN_EXPIRED");
+                }
+                case INVALID -> {
+                    log.warn("event=access_token_invalid | path={}", request.getRequestURI());
+                    request.setAttribute("auth-error", "INVALID_TOKEN");
+                }
             }
         }
 

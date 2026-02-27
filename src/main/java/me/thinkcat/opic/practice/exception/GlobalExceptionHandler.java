@@ -1,5 +1,6 @@
 package me.thinkcat.opic.practice.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -58,8 +59,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        log.warn("Bad credentials attempt: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex,
+                                                              HttpServletRequest request) {
+        String username = (String) request.getAttribute("auth-username");
+        log.warn("event=login_fail | who={} | reason=bad_credentials",
+                username != null ? username : "unknown");
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("BAD_CREDENTIALS")
                 .message("Invalid username or password")
