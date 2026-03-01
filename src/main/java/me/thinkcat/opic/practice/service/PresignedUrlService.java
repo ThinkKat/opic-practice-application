@@ -57,8 +57,6 @@ public class PresignedUrlService {
             // Presigned URL 생성
             PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
 
-            log.info("Generated upload URL for key: {}", request.getFileKey());
-
             return PresignedUrlResponse.builder()
                     .uploadUrl(presignedRequest.url().toString())
                     .fileKey(request.getFileKey())
@@ -70,7 +68,7 @@ public class PresignedUrlService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to generate upload URL for key: {}", request.getFileKey(), e);
+            log.error("event=presigned_upload_url_fail | fileKey={}", request.getFileKey(), e);
             throw new PresignedUrlException("Failed to generate upload URL", e);
         }
     }
@@ -91,8 +89,6 @@ public class PresignedUrlService {
 
             PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
 
-            log.info("Generated download URL for key: {}", fileKey);
-
             return PresignedUrlResponse.builder()
                     .uploadUrl(presignedRequest.url().toString())
                     .fileKey(fileKey)
@@ -100,7 +96,7 @@ public class PresignedUrlService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to generate download URL for file: {}", fileKey, e);
+            log.error("event=presigned_download_url_fail | fileKey={}", fileKey, e);
             throw new PresignedUrlException("Failed to generate download URL", e);
         }
     }
@@ -157,7 +153,7 @@ public class PresignedUrlService {
             log.debug("File does not exist in S3: {}", fileKey);
             return false;
         } catch (Exception e) {
-            log.error("Error checking file existence in S3: {}", fileKey, e);
+            log.error("event=s3_check_fail | fileKey={}", fileKey, e);
             return false;
         }
     }
