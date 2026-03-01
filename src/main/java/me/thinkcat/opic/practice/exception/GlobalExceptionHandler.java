@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
-        log.warn("Resource not found: {}", ex.getMessage());
+        log.warn("event=resource_not_found | msg={}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("RESOURCE_NOT_FOUND")
                 .message(ex.getMessage())
@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidation(ValidationException ex) {
-        log.warn("Validation error: {}", ex.getMessage());
+        log.warn("event=validation_error | msg={}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("VALIDATION_ERROR")
                 .message(ex.getMessage())
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenExpiredException.class)
     public ResponseEntity<ErrorResponse> handleTokenExpired(TokenExpiredException ex) {
-        log.warn("Token expired: {}", ex.getMessage());
+        log.warn("event=token_expired | msg={}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("REFRESH_TOKEN_EXPIRED")
                 .message(ex.getMessage())
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
-        log.warn("Unauthorized access: {}", ex.getMessage());
+        log.warn("event=unauthorized_access | msg={}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("UNAUTHORIZED")
                 .message(ex.getMessage())
@@ -73,7 +73,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PresignedUrlException.class)
     public ResponseEntity<ErrorResponse> handlePresignedUrlException(PresignedUrlException ex) {
-        log.error("Presigned URL generation failed: {}", ex.getMessage(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("PRESIGNED_URL_ERROR")
                 .message(ex.getMessage())
@@ -90,7 +89,7 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        log.warn("Method argument validation failed: {}", errors);
+        log.warn("event=invalid_input | errors={}", errors);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("INVALID_INPUT")
                 .message("Validation failed: " + errors.toString())
@@ -100,7 +99,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+        log.error("event=unexpected_error | msg={}", ex.getMessage(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("INTERNAL_SERVER_ERROR")
                 .message("An unexpected error occurred: " + ex.getMessage())
