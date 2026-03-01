@@ -38,14 +38,22 @@ public class RefreshTokenService {
 
     @Transactional
     public TokenResponse refreshTokens(String refreshTokenValue) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenWithLock(refreshTokenValue)
                 .orElseThrow(() -> {
                     log.warn("event=token_rotation_fail | reason=invalid_token");
                     return new UnauthorizedException("Invalid refresh token");
                 });
 
+        if (refreshToken.isRevoked()) {
+            log.warn("event=token_reuse_detected | who={} | action=revoke_all",
+                    refreshToken.getUser().getUsername());
+            revokeAllByUser(refreshToken.getUser());
+            throw new UnauthorizedException("Token reuse detected");
+        }
+
         if (refreshToken.isExpired()) {
-            refreshTokenRepository.delete(refreshToken);
+            refreshToken.revoke();
+            refreshTokenRepository.save(refreshToken);
             log.warn("event=token_rotation_fail | who={} | reason=expired",
                     refreshToken.getUser().getUsername());
             throw new TokenExpiredException("Refresh token expired");
@@ -53,8 +61,9 @@ public class RefreshTokenService {
 
         User user = refreshToken.getUser();
 
-        // Rotation: 기존 삭제 → 새로 발급
-        refreshTokenRepository.delete(refreshToken);
+        // Rotation: soft delete 후 신규 발급
+        refreshToken.revoke();
+        refreshTokenRepository.save(refreshToken);
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken newRefreshToken = createRefreshToken(user);
@@ -72,14 +81,15 @@ public class RefreshTokenService {
     public void revokeRefreshToken(String refreshTokenValue) {
         refreshTokenRepository.findByToken(refreshTokenValue)
                 .ifPresent(token -> {
+                    token.revoke();
+                    refreshTokenRepository.save(token);
                     log.info("event=token_revoke | who={}", token.getUser().getUsername());
-                    refreshTokenRepository.delete(token);
                 });
     }
 
     @Transactional
     public void revokeAllByUser(User user) {
         log.info("event=token_revoke_all | who={}", user.getUsername());
-        refreshTokenRepository.deleteByUserId(user.getId());
+        refreshTokenRepository.revokeAllByUserId(user.getId(), LocalDateTime.now());
     }
 }

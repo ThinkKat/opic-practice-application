@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.repository.RefreshTokenRepository;
 import me.thinkcat.opic.practice.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class UserCleanupScheduler {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value("${scheduler.refresh-token-cleanup.retention-days}")
+    private int refreshTokenRetentionDays;
 
     @Scheduled(cron = "0 0 4 * * *")
     @Transactional
@@ -44,10 +48,11 @@ public class UserCleanupScheduler {
         log.info("[UserCleanup] Hard deleted {} withdrawn users.", targets.size());
     }
 
-    @Scheduled(cron = "0 0 4 * * *")
+    @Scheduled(cron = "${scheduler.refresh-token-cleanup.cron}")
     @Transactional
-    public void cleanupExpiredRefreshTokens() {
-        refreshTokenRepository.deleteAllExpired(LocalDateTime.now());
-        log.info("[UserCleanup] Expired refresh tokens deleted.");
+    public void cleanupOldRefreshTokens() {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(refreshTokenRetentionDays);
+        refreshTokenRepository.deleteOlderThan(cutoff);
+        log.info("[UserCleanup] Old refresh tokens deleted (cutoff={})", cutoff);
     }
 }
