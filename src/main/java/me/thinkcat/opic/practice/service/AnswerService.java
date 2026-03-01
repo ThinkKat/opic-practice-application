@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.mapper.AnswerMapper;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AnswerService {
 
     private final FeatureFlagService featureFlagService;
@@ -64,6 +66,8 @@ public class AnswerService {
                 .build();
 
         Answer savedAnswer = answerRepository.save(answer);
+        log.info("event=answer_prepare | who={} | sessionId={} | questionId={} | answerId={}",
+                userId, sessionId, questionId, savedAnswer.getId());
 
         return PrepareAnswerUploadResponse.builder()
                 .answerId(savedAnswer.getId() != null ? savedAnswer.getId().toString() : null)
@@ -88,6 +92,7 @@ public class AnswerService {
                 .orElseThrow(() -> new ValidationException("Unauthorized access to answer"));
 
         if (answer.isUploadSuccess()) {
+            log.warn("event=answer_upload_already_done | who={} | answerId={}", userId, answerId);
             return resolveAnswerResponse(answer);
         }
 
@@ -96,9 +101,14 @@ public class AnswerService {
             answer.setDurationMs(durationMs);
         }
 
+        log.info("event=answer_upload_complete | who={} | answerId={} | audioUrl={}",
+                userId, answerId, answer.getAudioUrl());
+
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
             answer.requestFeedback();
             Answer updatedAnswer = answerRepository.save(answer);
+            log.info("event=feedback_requested | who={} | answerId={} | audioUrl={}",
+                    userId, answerId, answer.getAudioUrl());
             feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl());
             return resolveAnswerResponse(updatedAnswer);
         }
@@ -133,6 +143,8 @@ public class AnswerService {
             boolean fileExists = presignedUrlService.checkFileExists(answer.getAudioUrl());
 
             if (fileExists) {
+                log.warn("event=answer_upload_recovery | who={} | answerId={} | audioUrl={}",
+                        userId, answerId, answer.getAudioUrl());
                 answer.markUploadSuccess();
                 answerRepository.save(answer);
             } else {
@@ -142,6 +154,8 @@ public class AnswerService {
                 ).toMinutes();
 
                 if (minutesSinceCreation > 30) {
+                    log.warn("event=answer_upload_failed | who={} | answerId={} | audioUrl={}",
+                            userId, answerId, answer.getAudioUrl());
                     answer.markUploadFailed();
                     answerRepository.save(answer);
                     throw new ValidationException("Answer upload failed or timed out");
@@ -172,6 +186,7 @@ public class AnswerService {
             answer.setDurationMs((int) (duration * 1000));
         }
         answerRepository.save(answer);
+        log.info("event=feedback_transcription_saved | audioUrl={}", audioUrl);
     }
 
     @Transactional
@@ -182,6 +197,7 @@ public class AnswerService {
         answer.setFeedback(feedback);
         answer.completeFeedback();
         answerRepository.save(answer);
+        log.info("event=feedback_completed | answerId={} | audioUrl={}", answer.getId(), audioUrl);
     }
 
     @Transactional
@@ -193,8 +209,12 @@ public class AnswerService {
                 || reason == FeedbackFailureReason.TOO_SHORT;
         if (isInvalid) {
             answer.invalidateFeedback();
+            log.warn("event=feedback_failed_callback | answerId={} | audioUrl={} | reason={}",
+                    answer.getId(), audioUrl, reason.getCode());
         } else {
             answer.failFeedback();
+            log.error("event=feedback_error_callback | answerId={} | audioUrl={} | reason={}",
+                    answer.getId(), audioUrl, reason.getCode());
         }
         answerRepository.save(answer);
     }

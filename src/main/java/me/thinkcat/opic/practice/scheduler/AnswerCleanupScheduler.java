@@ -37,7 +37,7 @@ public class AnswerCleanupScheduler {
     // @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupOrphanedAnswers() {
-        log.info("Starting orphaned answers cleanup task...");
+        log.info("event=scheduler_answer_cleanup_start");
 
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
 
@@ -51,8 +51,8 @@ public class AnswerCleanupScheduler {
 
         orphanedAnswers.forEach(answer -> {
             answer.markUploadFailed();
-            log.warn("Marked answer {} as FAILED due to timeout (created: {}, sessionId: {})",
-                    answer.getId(), answer.getCreatedAt(), answer.getSessionId());
+            log.warn("event=scheduler_answer_timeout | answerId={} | sessionId={} | createdAt={}",
+                    answer.getId(), answer.getSessionId(), answer.getCreatedAt());
         });
 
         answerRepository.saveAll(orphanedAnswers);
@@ -75,7 +75,7 @@ public class AnswerCleanupScheduler {
         if (!timedOutAnswers.isEmpty()) {
             timedOutAnswers.forEach(answer -> {
                 answer.failFeedback();
-                log.warn("Marked answer {} feedback as FAILED due to timeout (updatedAt: {})",
+                log.warn("event=scheduler_feedback_timeout | answerId={} | updatedAt={}",
                         answer.getId(), answer.getUpdatedAt());
             });
             answerRepository.saveAll(timedOutAnswers);
@@ -88,7 +88,7 @@ public class AnswerCleanupScheduler {
         if (!timedOutDrillAnswers.isEmpty()) {
             timedOutDrillAnswers.forEach(drillAnswer -> {
                 drillAnswer.failFeedback();
-                log.warn("Marked drill answer {} feedback as FAILED due to timeout (updatedAt: {})",
+                log.warn("event=scheduler_feedback_timeout | drillAnswerId={} | updatedAt={}",
                         drillAnswer.getId(), drillAnswer.getUpdatedAt());
             });
             drillAnswerRepository.saveAll(timedOutDrillAnswers);

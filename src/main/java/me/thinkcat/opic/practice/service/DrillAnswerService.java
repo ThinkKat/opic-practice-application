@@ -1,6 +1,7 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.mapper.DrillAnswerMapper;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
 import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DrillAnswerService {
 
     private final FeatureFlagService featureFlagService;
@@ -67,6 +69,8 @@ public class DrillAnswerService {
                 .build();
 
         DrillAnswer savedAnswer = drillAnswerRepository.save(drillAnswer);
+        log.info("event=drill_prepare | who={} | questionId={} | drillAnswerId={}",
+                userId, questionId, savedAnswer.getId());
 
         return PrepareDrillAnswerUploadResponse.builder()
                 .drillAnswerId(savedAnswer.getId() != null ? savedAnswer.getId().toString() : null)
@@ -87,6 +91,7 @@ public class DrillAnswerService {
         }
 
         if (answer.isUploadSuccess()) {
+            log.warn("event=drill_submit_already_done | who={} | drillAnswerId={}", userId, drillAnswerId);
             return resolveDrillAnswerResponse(answer);
         }
 
@@ -95,9 +100,14 @@ public class DrillAnswerService {
             answer.setDurationMs(durationMs);
         }
 
+        log.info("event=drill_submit | who={} | drillAnswerId={} | audioUrl={}",
+                userId, drillAnswerId, answer.getAudioUrl());
+
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
             answer.requestFeedback();
             DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
+            log.info("event=drill_feedback_requested | who={} | drillAnswerId={} | audioUrl={}",
+                    userId, drillAnswerId, answer.getAudioUrl());
             feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl());
             return resolveDrillAnswerResponse(updatedAnswer);
         }
@@ -167,6 +177,7 @@ public class DrillAnswerService {
             answer.setDurationMs((int) (duration * 1000));
         }
         drillAnswerRepository.save(answer);
+        log.info("event=drill_transcription_saved | audioUrl={}", audioUrl);
     }
 
     @Transactional
@@ -177,6 +188,7 @@ public class DrillAnswerService {
         answer.setFeedback(feedback);
         answer.completeFeedback();
         drillAnswerRepository.save(answer);
+        log.info("event=drill_feedback_completed | drillAnswerId={} | audioUrl={}", answer.getId(), audioUrl);
     }
 
     @Transactional
@@ -188,8 +200,12 @@ public class DrillAnswerService {
                 || reason == FeedbackFailureReason.TOO_SHORT;
         if (isInvalid) {
             answer.invalidateFeedback();
+            log.warn("event=drill_feedback_failed_callback | drillAnswerId={} | audioUrl={} | reason={}",
+                    answer.getId(), audioUrl, reason.getCode());
         } else {
             answer.failFeedback();
+            log.error("event=drill_feedback_error_callback | drillAnswerId={} | audioUrl={} | reason={}",
+                    answer.getId(), audioUrl, reason.getCode());
         }
         drillAnswerRepository.save(answer);
     }
