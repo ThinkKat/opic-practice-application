@@ -28,6 +28,9 @@ public class UserCleanupScheduler {
     @Value("${scheduler.refresh-token-cleanup.retention-days}")
     private int refreshTokenRetentionDays;
 
+    /**
+     * 탈퇴 유저 30일 이후에 실제 정보 물리적 삭제.
+     */
     @Scheduled(cron = "0 0 4 * * *")
     @Transactional
     public void hardDeleteWithdrawnUsers() {
@@ -35,24 +38,26 @@ public class UserCleanupScheduler {
         List<User> targets = userRepository.findSoftDeletedBefore(threshold);
 
         if (targets.isEmpty()) {
-            log.info("[UserCleanup] No withdrawn users to delete.");
             return;
         }
 
         for (User user : targets) {
             refreshTokenRepository.deleteByUserId(user.getId());
             userRepository.delete(user);
-            log.info("[UserCleanup] Hard deleted user id={}, deletedAt={}", user.getId(), user.getDeletedAt());
+            log.info("event=scheduler_user_deleted | userId={} | deletedAt={}", user.getId(), user.getDeletedAt());
         }
 
-        log.info("[UserCleanup] Hard deleted {} withdrawn users.", targets.size());
+        log.info("event=scheduler_user_cleanup_done | count={}", targets.size());
     }
 
+    /**
+     * 90일 지난 refresh token 삭제
+     */
     @Scheduled(cron = "${scheduler.refresh-token-cleanup.cron}")
     @Transactional
     public void cleanupOldRefreshTokens() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(refreshTokenRetentionDays);
         refreshTokenRepository.deleteOlderThan(cutoff);
-        log.info("[UserCleanup] Old refresh tokens deleted (cutoff={})", cutoff);
+        log.info("event=scheduler_token_cleanup_done | cutoff={}", cutoff);
     }
 }
