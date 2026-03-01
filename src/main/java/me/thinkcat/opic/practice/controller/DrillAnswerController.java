@@ -144,7 +144,7 @@ public class DrillAnswerController {
     }
 
     @PatchMapping("/internal/transcription")
-    public ResponseEntity<CommonResponse<Void>> g(
+    public ResponseEntity<CommonResponse<Void>> updateDrillTranscription(
             @Valid @RequestBody UpdateDrillTranscriptionRequest request) {
 
         drillAnswerService.updateTranscription(
