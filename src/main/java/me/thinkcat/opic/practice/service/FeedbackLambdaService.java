@@ -45,9 +45,9 @@ public class FeedbackLambdaService {
         lambdaAsyncClient.invoke(request)
                 .whenComplete((response, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to invoke feedback Lambda for audioUrl={}: {}", audioUrl, ex.getMessage());
+                        log.error("event=feedback_lambda_invoke_fail | audioUrl={} | error={}", audioUrl, ex.getMessage());
                     } else {
-                        log.info("Feedback Lambda invoked for audioUrl={}, statusCode={}", audioUrl, response.statusCode());
+                        log.info("event=feedback_lambda_invoke | audioUrl={} | statusCode={}", audioUrl, response.statusCode());
                     }
                 });
     }
