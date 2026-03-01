@@ -8,6 +8,7 @@ import me.thinkcat.opic.practice.entity.SessionStatus;
 import me.thinkcat.opic.practice.entity.StorageType;
 import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
+import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -32,6 +35,7 @@ class AnswerServiceTest {
 
     @Mock private AnswerRepository answerRepository;
     @Mock private SessionRepository sessionRepository;
+    @Mock private QuestionRepository questionRepository;
     @Mock private FeatureFlagService featureFlagService;
     @Mock private FeedbackLambdaService feedbackLambdaService;
     @Mock private PresignedUrlService presignedUrlService;
@@ -59,6 +63,7 @@ class AnswerServiceTest {
 
         given(answerRepository.findById(answerId)).willReturn(Optional.of(pendingAnswer));
         given(sessionRepository.findByIdAndUserId(1L, userId)).willReturn(Optional.of(session));
+        lenient().when(questionRepository.findById(any())).thenReturn(Optional.empty());
         given(answerRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
         given(presignedUrlService.generateDownloadUrl(anyString()))
                 .willReturn(mock(PresignedUrlResponse.class));
@@ -72,7 +77,7 @@ class AnswerServiceTest {
 
         assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
         verify(feedbackLambdaService, times(1))
-                .invokeSessionFeedbackAsync(pendingAnswer.getAudioUrl());
+                .invokeSessionFeedbackAsync(eq(pendingAnswer.getAudioUrl()), eq(userId), any());
     }
 
     @Test
@@ -82,7 +87,7 @@ class AnswerServiceTest {
         answerService.completeAnswerUpload(userId, UserRole.FREE, answerId, 5000);
 
         assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.NONE);
-        verify(feedbackLambdaService, never()).invokeSessionFeedbackAsync(any());
+        verify(feedbackLambdaService, never()).invokeSessionFeedbackAsync(any(), any(), any());
     }
 
     @Test
@@ -91,6 +96,6 @@ class AnswerServiceTest {
 
         assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
         verify(feedbackLambdaService, times(1))
-                .invokeSessionFeedbackAsync(pendingAnswer.getAudioUrl());
+                .invokeSessionFeedbackAsync(eq(pendingAnswer.getAudioUrl()), eq(userId), any());
     }
 }

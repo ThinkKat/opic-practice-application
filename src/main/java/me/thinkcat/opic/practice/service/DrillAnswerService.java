@@ -108,7 +108,10 @@ public class DrillAnswerService {
             DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
             log.info("event=drill_feedback_requested | who={} | drillAnswerId={} | audioUrl={}",
                     userId, drillAnswerId, answer.getAudioUrl());
-            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl());
+            String questionText = questionRepository.findById(answer.getQuestionId())
+                    .map(Question::getQuestion)
+                    .orElse(null);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
             return resolveDrillAnswerResponse(updatedAnswer);
         }
 
