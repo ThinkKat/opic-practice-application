@@ -16,7 +16,9 @@ import me.thinkcat.opic.practice.entity.UploadStatus;
 import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
+import me.thinkcat.opic.practice.entity.Question;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
+import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class AnswerService {
 
     private final AnswerRepository answerRepository;
     private final SessionRepository sessionRepository;
+    private final QuestionRepository questionRepository;
     private final PresignedUrlService presignedUrlService;
     private final FeedbackLambdaService feedbackLambdaService;
 
@@ -109,7 +112,10 @@ public class AnswerService {
             Answer updatedAnswer = answerRepository.save(answer);
             log.info("event=feedback_requested | who={} | answerId={} | audioUrl={}",
                     userId, answerId, answer.getAudioUrl());
-            feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl());
+            String questionText = questionRepository.findById(answer.getQuestionId())
+                    .map(Question::getQuestion)
+                    .orElse(null);
+            feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl(), userId, questionText);
             return resolveAnswerResponse(updatedAnswer);
         }
 
