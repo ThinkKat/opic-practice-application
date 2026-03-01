@@ -27,6 +27,13 @@ public class RefreshToken {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean revoked = false;
+
+    @Column
+    private LocalDateTime revokedAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -37,5 +44,10 @@ public class RefreshToken {
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
+    }
+
+    public void revoke() {
+        this.revoked = true;
+        this.revokedAt = LocalDateTime.now();
     }
 }
