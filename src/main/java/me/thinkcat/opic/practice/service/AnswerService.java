@@ -17,9 +17,11 @@ import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.entity.Question;
+import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
+import me.thinkcat.opic.practice.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,7 @@ public class AnswerService {
     private final AnswerRepository answerRepository;
     private final SessionRepository sessionRepository;
     private final QuestionRepository questionRepository;
+    private final UserRepository userRepository;
     private final PresignedUrlService presignedUrlService;
     private final FeedbackLambdaService feedbackLambdaService;
 
@@ -88,24 +91,26 @@ public class AnswerService {
             Long answerId,
             Integer durationMs) {
 
-        Answer answer = answerRepository.findById(answerId)
+        Answer answer = answerRepository.findByIdForUpdate(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
 
         sessionRepository.findByIdAndUserId(answer.getSessionId(), userId)
                 .orElseThrow(() -> new ValidationException("Unauthorized access to answer"));
 
-        if (answer.isUploadSuccess()) {
-            log.warn("event=answer_upload_already_done | who={} | answerId={}", userId, answerId);
-            return resolveAnswerResponse(answer);
+        if (answer.isUploadPending()) {
+            answer.markUploadSuccess();
+            log.info("event=answer_upload_complete | who={} | answerId={} | audioUrl={}",
+                    userId, answerId, answer.getAudioUrl());
         }
 
-        answer.markUploadSuccess();
-        if (durationMs != null) {
+        if (durationMs != null && answer.getDurationMs() == 0) {
             answer.setDurationMs(durationMs);
         }
 
-        log.info("event=answer_upload_complete | who={} | answerId={} | audioUrl={}",
-                userId, answerId, answer.getAudioUrl());
+        if (!answer.isFeedbackNone()) {
+            log.warn("event=answer_feedback_already_requested | who={} | answerId={}", userId, answerId);
+            return resolveAnswerResponse(answerRepository.save(answer));
+        }
 
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
             answer.requestFeedback();
@@ -121,6 +126,51 @@ public class AnswerService {
 
         Answer updatedAnswer = answerRepository.save(answer);
         return resolveAnswerResponse(updatedAnswer);
+    }
+
+    @Transactional
+    public void handleS3UploadDetected(String fileKey) {
+        Answer answer = answerRepository.findByAudioUrlForUpdate(fileKey).orElse(null);
+        if (answer == null) {
+            log.warn("event=s3_upload_detected_not_found | fileKey={}", fileKey);
+            return;
+        }
+
+        if (answer.isUploadPending()) {
+            answer.markUploadSuccess();
+            log.info("event=s3_upload_detected_marked_success | answerId={} | audioUrl={}",
+                    answer.getId(), fileKey);
+        }
+
+        if (!answer.isFeedbackNone()) {
+            log.warn("event=s3_upload_detected_feedback_already_requested | answerId={} | audioUrl={}",
+                    answer.getId(), fileKey);
+            answerRepository.save(answer);
+            return;
+        }
+
+        Long userId = sessionRepository.findById(answer.getSessionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found for answer: " + answer.getId()))
+                .getUserId();
+
+        UserRole userRole = userRepository.findById(userId)
+                .map(User::getUserRole)
+                .orElse(UserRole.FREE);
+
+        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
+            answer.requestFeedback();
+            answerRepository.save(answer);
+            log.info("event=s3_upload_detected_feedback_requested | who={} | answerId={} | audioUrl={}",
+                    userId, answer.getId(), fileKey);
+            String questionText = questionRepository.findById(answer.getQuestionId())
+                    .map(Question::getQuestion)
+                    .orElse(null);
+            feedbackLambdaService.invokeSessionFeedbackAsync(fileKey, userId, questionText);
+            return;
+        }
+
+        answerRepository.save(answer);
+        log.info("event=s3_upload_detected_no_feedback | who={} | answerId={}", userId, answer.getId());
     }
 
     @Transactional(readOnly = true)

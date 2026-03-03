@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.request.CompleteAnswerUploadRequest;
 import me.thinkcat.opic.practice.dto.request.PrepareAnswerUploadRequest;
+import me.thinkcat.opic.practice.dto.request.S3UploadDetectedRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateFeedbackRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateFeedbackStatusRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateTranscriptionRequest;
@@ -69,6 +70,20 @@ public class AnswerController {
                 .success(true)
                 .result(answerResponse)
                 .message("Answer upload completed successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/internal/s3-upload-detected")
+    public ResponseEntity<CommonResponse<Void>> handleS3UploadDetected(
+            @Valid @RequestBody S3UploadDetectedRequest request) {
+
+        answerService.handleS3UploadDetected(request.getFileKey());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("S3 upload detected processed successfully")
                 .build();
 
         return ResponseEntity.ok(response);
