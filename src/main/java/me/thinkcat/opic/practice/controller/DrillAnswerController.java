@@ -6,6 +6,7 @@ import me.thinkcat.opic.practice.config.security.AuthUserInfo;
 import me.thinkcat.opic.practice.config.security.annotation.AuthUser;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.request.PrepareDrillAnswerUploadRequest;
+import me.thinkcat.opic.practice.dto.request.S3UploadDetectedRequest;
 import me.thinkcat.opic.practice.dto.request.SubmitDrillAnswerRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateDrillFeedbackRequest;
 import me.thinkcat.opic.practice.dto.request.UpdateDrillTranscriptionRequest;
@@ -125,6 +126,20 @@ public class DrillAnswerController {
                         .result(historyResponse)
                         .message("Question practice history retrieved successfully")
                         .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/internal/s3-upload-detected")
+    public ResponseEntity<CommonResponse<Void>> handleS3UploadDetected(
+            @Valid @RequestBody S3UploadDetectedRequest request) {
+
+        drillAnswerService.handleS3UploadDetected(request.getFileKey());
+
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Drill S3 upload detected processed successfully")
+                .build();
 
         return ResponseEntity.ok(response);
     }

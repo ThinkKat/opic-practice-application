@@ -17,10 +17,12 @@ import me.thinkcat.opic.practice.entity.UploadStatus;
 import me.thinkcat.opic.practice.entity.UserRole;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
+import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.repository.CategoryRepository;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.RecentDrillQuestionProjection;
+import me.thinkcat.opic.practice.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,7 @@ public class DrillAnswerService {
     private final DrillAnswerRepository drillAnswerRepository;
     private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
     private final PresignedUrlService presignedUrlService;
     private final FeedbackLambdaService feedbackLambdaService;
 
@@ -83,25 +86,27 @@ public class DrillAnswerService {
 
     @Transactional
     public DrillAnswerResponse submitDrillAnswer(Long userId, UserRole userRole, Long drillAnswerId, Integer durationMs) {
-        DrillAnswer answer = drillAnswerRepository.findById(drillAnswerId)
+        DrillAnswer answer = drillAnswerRepository.findByIdForUpdate(drillAnswerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Drill answer not found with id: " + drillAnswerId));
 
         if (!answer.getUserId().equals(userId)) {
             throw new ValidationException("Unauthorized access to drill answer");
         }
 
-        if (answer.isUploadSuccess()) {
-            log.warn("event=drill_submit_already_done | who={} | drillAnswerId={}", userId, drillAnswerId);
-            return resolveDrillAnswerResponse(answer);
+        if (answer.isUploadPending()) {
+            answer.markUploadSuccess();
+            log.info("event=drill_submit | who={} | drillAnswerId={} | audioUrl={}",
+                    userId, drillAnswerId, answer.getAudioUrl());
         }
 
-        answer.markUploadSuccess();
-        if (durationMs != null) {
+        if (durationMs != null && answer.getDurationMs() == 0) {
             answer.setDurationMs(durationMs);
         }
 
-        log.info("event=drill_submit | who={} | drillAnswerId={} | audioUrl={}",
-                userId, drillAnswerId, answer.getAudioUrl());
+        if (!answer.isFeedbackNone()) {
+            log.warn("event=drill_feedback_already_requested | who={} | drillAnswerId={}", userId, drillAnswerId);
+            return resolveDrillAnswerResponse(drillAnswerRepository.save(answer));
+        }
 
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
             answer.requestFeedback();
@@ -117,6 +122,48 @@ public class DrillAnswerService {
 
         DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
         return resolveDrillAnswerResponse(updatedAnswer);
+    }
+
+    @Transactional
+    public void handleS3UploadDetected(String fileKey) {
+        DrillAnswer answer = drillAnswerRepository.findByAudioUrlForUpdate(fileKey).orElse(null);
+        if (answer == null) {
+            log.warn("event=drill_s3_upload_detected_not_found | fileKey={}", fileKey);
+            return;
+        }
+
+        if (answer.isUploadPending()) {
+            answer.markUploadSuccess();
+            log.info("event=drill_s3_upload_detected_marked_success | drillAnswerId={} | audioUrl={}",
+                    answer.getId(), fileKey);
+        }
+
+        if (!answer.isFeedbackNone()) {
+            log.warn("event=drill_s3_upload_detected_feedback_already_requested | drillAnswerId={} | audioUrl={}",
+                    answer.getId(), fileKey);
+            drillAnswerRepository.save(answer);
+            return;
+        }
+
+        UserRole userRole = userRepository.findById(answer.getUserId())
+                .map(User::getUserRole)
+                .orElse(UserRole.FREE);
+
+        if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
+            answer.requestFeedback();
+            drillAnswerRepository.save(answer);
+            log.info("event=drill_s3_upload_detected_feedback_requested | who={} | drillAnswerId={} | audioUrl={}",
+                    answer.getUserId(), answer.getId(), fileKey);
+            String questionText = questionRepository.findById(answer.getQuestionId())
+                    .map(Question::getQuestion)
+                    .orElse(null);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(fileKey, answer.getUserId(), questionText);
+            return;
+        }
+
+        drillAnswerRepository.save(answer);
+        log.info("event=drill_s3_upload_detected_no_feedback | who={} | drillAnswerId={}",
+                answer.getUserId(), answer.getId());
     }
 
     @Transactional(readOnly = true)
