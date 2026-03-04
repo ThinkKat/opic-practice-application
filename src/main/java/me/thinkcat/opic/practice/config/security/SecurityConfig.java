@@ -38,7 +38,8 @@ public class SecurityConfig {
             "/actuator/**",
             "/api/v1/answers/internal/**",
             "/api/v1/questions/internal/**",
-            "/api/v1/drill-answers/internal/**"
+            "/api/v1/drill-answers/internal/**",
+            "/api/v1/notices/**"
     };
 
     @Bean
