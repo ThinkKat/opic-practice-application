@@ -12,9 +12,9 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvocationType;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
+
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,28 +25,34 @@ public class FeedbackLambdaService {
     private final AwsLambdaConfig lambdaConfig;
     private final PresignedUrlProperties s3Properties;
     private final ObjectMapper objectMapper;
+    private final LambdaFeedbackStatusUpdater lambdaFeedbackStatusUpdater;
 
     public void invokeSessionFeedbackAsync(String audioUrl, Long userId, String questionText) {
-        invokeAsync(audioUrl, lambdaConfig.getSessionFeedbackFunctionName(), userId, questionText);
+        invokeAsync(audioUrl, lambdaConfig.getSessionFeedbackFunctionName(), userId, questionText,
+                () -> lambdaFeedbackStatusUpdater.failSessionFeedback(audioUrl));
     }
 
     public void invokeDrillAnswerFeedbackAsync(String audioUrl, Long userId, String questionText) {
-        invokeAsync(audioUrl, lambdaConfig.getDrillAnswerFeedbackFunctionName(), userId, questionText);
+        invokeAsync(audioUrl, lambdaConfig.getDrillAnswerFeedbackFunctionName(), userId, questionText,
+                () -> lambdaFeedbackStatusUpdater.failDrillFeedback(audioUrl));
     }
 
-    private void invokeAsync(String audioUrl, String lambdaFunctionName, Long userId, String questionText) {
-        Map<String, Object> payloadMap = new LinkedHashMap<>();
-        payloadMap.put("source", "WAS");
-        payloadMap.put("bucket", s3Properties.getBucket());
-        payloadMap.put("audioUrl", audioUrl);
-        payloadMap.put("userId", userId);
-        payloadMap.put("questionText", questionText);
+    private void invokeAsync(String audioUrl, String lambdaFunctionName, Long userId, String questionText,
+                             Runnable onInvokeFail) {
+        LambdaFeedbackRequest requestDto = LambdaFeedbackRequest.builder()
+                .source("WAS")
+                .bucket(s3Properties.getBucket())
+                .audioUrl(audioUrl)
+                .userId(userId)
+                .questionText(questionText)
+                .build();
 
         String payload;
         try {
-            payload = objectMapper.writeValueAsString(payloadMap);
+            payload = objectMapper.writeValueAsString(requestDto);
         } catch (JsonProcessingException e) {
             log.error("event=feedback_lambda_payload_fail | audioUrl={} | error={}", audioUrl, e.getMessage());
+            onInvokeFail.run();
             return;
         }
 
@@ -60,6 +66,7 @@ public class FeedbackLambdaService {
                 .whenComplete((response, ex) -> {
                     if (ex != null) {
                         log.error("event=feedback_lambda_invoke_fail | audioUrl={} | userId={} | error={}", audioUrl, userId, ex.getMessage());
+                        onInvokeFail.run();
                     } else {
                         log.info("event=feedback_lambda_invoke | audioUrl={} | userId={} | statusCode={}", audioUrl, userId, response.statusCode());
                     }
