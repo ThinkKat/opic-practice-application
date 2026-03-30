@@ -20,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,15 +35,17 @@ public class UserService {
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ValidationException("Username already exists");
-        }
-
         validatePassword(request.getPassword());
         validateEmail(request.getEmail());
 
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ValidationException("Email already exists");
+        }
+
+        String username = generateUniqueUsername(request.getEmail());
+
         User user = User.builder()
-                .username(request.getUsername())
+                .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .termsAgreedAt(request.getTermsAgreedAt())
@@ -50,23 +54,23 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        log.info("event=register | who={}", request.getUsername());
+        log.info("event=register | who={} | email={}", username, request.getEmail());
         return UserMapper.toResponse(savedUser);
     }
 
     @Transactional
     public TokenResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
-
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword())
+        );
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-        log.info("event=login_success | who={}", request.getUsername());
+        log.info("event=login_success | who={}", user.getUsername());
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
@@ -102,6 +106,27 @@ public class UserService {
         user.softDelete();
         userRepository.save(user);
         log.warn("event=withdraw | who={}", username);
+    }
+
+    private static final String SUFFIX_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int SUFFIX_LENGTH = 6;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private String generateUniqueUsername(String email) {
+        String prefix = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        if (prefix.isEmpty()) prefix = "user";
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            StringBuilder suffix = new StringBuilder();
+            for (int i = 0; i < SUFFIX_LENGTH; i++) {
+                suffix.append(SUFFIX_CHARS.charAt(RANDOM.nextInt(SUFFIX_CHARS.length())));
+            }
+            String candidate = prefix + "_" + suffix;
+            if (!userRepository.existsByUsername(candidate)) {
+                return candidate;
+            }
+        }
+        throw new ValidationException("Failed to generate unique username. Please try again.");
     }
 
     private void validatePassword(String password) {

@@ -41,7 +41,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<CommonResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request,
                                                                HttpServletRequest httpRequest) {
-        httpRequest.setAttribute("auth-username", request.getUsername());
+        httpRequest.setAttribute("auth-username", request.getEmail());
         TokenResponse tokenResponse = userService.login(request);
 
         CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
