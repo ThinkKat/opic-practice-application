@@ -190,4 +190,17 @@ public class DrillAnswerController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{answerId}/retry-feedback")
+    public ResponseEntity<CommonResponse<Void>> retryFeedback(
+            @PathVariable Long answerId,
+            @AuthUser AuthUserInfo user
+    ) {
+        drillAnswerService.retryFeedback(answerId, user.getUserId());
+        CommonResponse<Void> response = CommonResponse.<Void>builder()
+                .success(true)
+                .message("Re-invoke Feedback successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 }

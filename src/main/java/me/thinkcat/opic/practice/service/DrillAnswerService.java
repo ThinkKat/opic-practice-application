@@ -8,16 +8,9 @@ import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.dto.response.RecentDrillQuestionResponse;
-import me.thinkcat.opic.practice.entity.Category;
-import me.thinkcat.opic.practice.entity.DrillAnswer;
-import me.thinkcat.opic.practice.entity.FeedbackFailureReason;
-import me.thinkcat.opic.practice.entity.Question;
-import me.thinkcat.opic.practice.entity.StorageType;
-import me.thinkcat.opic.practice.entity.UploadStatus;
-import me.thinkcat.opic.practice.entity.UserRole;
+import me.thinkcat.opic.practice.entity.*;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
-import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.repository.CategoryRepository;
 import me.thinkcat.opic.practice.repository.DrillAnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
@@ -258,6 +251,34 @@ public class DrillAnswerService {
                     answer.getId(), audioUrl, reason.getCode());
         }
         drillAnswerRepository.save(answer);
+    }
+
+    @Transactional
+    public void retryFeedback(Long answerId, Long userId) {
+        DrillAnswer answer = drillAnswerRepository.findByIdForUpdate(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
+
+        // Validate the owner of the answer
+        if (!answer.getUserId().equals(userId)) {
+            throw new ValidationException("Unauthorized access to drill answer");
+        }
+
+        if (!answer.isFeedbackFailed()) {
+            log.warn("event=failed_retry_feedback | answerId={} | audioUrl={}",
+                    answer.getId(), answer.getAudioUrl());
+            throw new ValidationException("Feedback Requested is not failed");
+        }
+
+        // No need to validate user role because retry is provided only for
+        // the paid user or the answers when were created during event(ai-for-free)
+        answer.requestFeedback();
+        drillAnswerRepository.save(answer);
+        log.info("event=drill_retry_feedback_requested | who={} | answerId={} | audioUrl={}",
+                userId, answer.getId(), answer.getAudioUrl());
+        String questionText = questionRepository.findById(answer.getQuestionId())
+                .map(Question::getQuestion)
+                .orElse(null);
+        feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
     }
 
     private DrillAnswerResponse resolveDrillAnswerResponse(DrillAnswer answer) {

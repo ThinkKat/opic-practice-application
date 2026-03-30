@@ -275,6 +275,33 @@ public class AnswerService {
         answerRepository.save(answer);
     }
 
+    @Transactional
+    public void retryFeedback(Long answerId, Long userId) {
+        Answer answer = answerRepository.findByIdForUpdate(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
+
+        // Validate the owner of the answer
+        sessionRepository.findByIdAndUserId(answer.getSessionId(), userId)
+                .orElseThrow(() -> new ValidationException("Unauthorized access to answer"));
+
+        if (!answer.isFeedbackFailed()) {
+            log.warn("event=failed_retry_feedback | answerId={} | audioUrl={}",
+                    answer.getId(), answer.getAudioUrl());
+            throw new ValidationException("Feedback Requested is not failed");
+        }
+
+        // No need to validate user role because retry is provided only for
+        // the paid user or the answers when were created during event(ai-for-free)
+        answer.requestFeedback();
+        answerRepository.save(answer);
+        log.info("event=retry_feedback_requested | who={} | answerId={} | audioUrl={}",
+                userId, answer.getId(), answer.getAudioUrl());
+        String questionText = questionRepository.findById(answer.getQuestionId())
+                .map(Question::getQuestion)
+                .orElse(null);
+        feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+    }
+
     private AnswerResponse resolveAnswerResponse(Answer answer) {
         AnswerResponse response = AnswerMapper.toResponse(answer);
         return AnswerResponse.builder()
