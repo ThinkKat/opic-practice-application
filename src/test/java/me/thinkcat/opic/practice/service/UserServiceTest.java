@@ -1,8 +1,8 @@
 package me.thinkcat.opic.practice.service;
 
 import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
-import me.thinkcat.opic.practice.dto.mapper.UserMapper;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
+import me.thinkcat.opic.practice.dto.request.UserRegisterWithoutRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
 import me.thinkcat.opic.practice.entity.RefreshToken;
@@ -54,7 +54,7 @@ class UserServiceTest {
     })
     void 유효하지않은_비밀번호로_회원가입시_ValidationException(String password) {
         assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest("testuser", password, "a@b.com", LocalDateTime.now(), LocalDateTime.now())))
+                userService.register(new UserRegisterRequest("testuser", "a@b.com", password, LocalDateTime.now(), LocalDateTime.now())))
                 .isInstanceOf(ValidationException.class);
     }
 
@@ -77,7 +77,7 @@ class UserServiceTest {
 
         // when
         UserResponse response = userService.register(
-            new UserRegisterRequest(username, password, email, LocalDateTime.now(), LocalDateTime.now())
+            new UserRegisterRequest(username, email, password, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
@@ -96,7 +96,7 @@ class UserServiceTest {
 
         // when
         Exception exception = assertThrows(ValidationException.class, () ->
-            userService.register(new UserRegisterRequest("testuser", password, email, LocalDateTime.now(), LocalDateTime.now()))
+            userService.register(new UserRegisterRequest("testuser", email, password, LocalDateTime.now(), LocalDateTime.now()))
         );
 
         // then
@@ -112,7 +112,7 @@ class UserServiceTest {
     })
     void 유효하지않은_이메일로_회원가입시_ValidationException(String email) {
         assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest("testuser", "Password1@", email, LocalDateTime.now(), LocalDateTime.now())))
+                userService.register(new UserRegisterRequest("testuser", email, "Password1@", LocalDateTime.now(), LocalDateTime.now())))
                 .isInstanceOf(ValidationException.class);
     }
 
@@ -138,7 +138,7 @@ class UserServiceTest {
 
         // when
         userService.registerWithoutUsername(
-                new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now())
+                new UserRegisterWithoutRequest(email, password, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
@@ -166,7 +166,7 @@ class UserServiceTest {
 
         // when
         userService.registerWithoutUsername(
-                new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now())
+                new UserRegisterWithoutRequest(email, password, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
@@ -186,7 +186,7 @@ class UserServiceTest {
 
         // when
         Exception exception = assertThrows(ValidationException.class, () ->
-                userService.registerWithoutUsername(new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now()))
+                userService.registerWithoutUsername(new UserRegisterWithoutRequest(email, password, LocalDateTime.now(), LocalDateTime.now()))
         );
 
         // then

@@ -12,10 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRegisterRequest {
-
-    @NotBlank(message = "Username is required")
-    private String username;
+public class UserRegisterWithoutRequest {
 
     @NotBlank(message = "Email is required")
     private String email;
