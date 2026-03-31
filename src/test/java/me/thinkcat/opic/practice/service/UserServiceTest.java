@@ -2,7 +2,6 @@ package me.thinkcat.opic.practice.service;
 
 import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
 import me.thinkcat.opic.practice.dto.mapper.UserMapper;
-import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
@@ -43,6 +42,8 @@ class UserServiceTest {
     @Mock private RefreshTokenService refreshTokenService;
     @InjectMocks private UserService userService;
 
+    // ── v1 register() 테스트 ──────────────────────────────────────────────
+
     @ParameterizedTest
     @ValueSource(strings = {
             "password1@",   // 대문자 없음
@@ -53,35 +54,69 @@ class UserServiceTest {
     })
     void 유효하지않은_비밀번호로_회원가입시_ValidationException(String password) {
         assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest(password, "a@b.com", LocalDateTime.now(), LocalDateTime.now())))
+                userService.register(new UserRegisterRequest("testuser", password, "a@b.com", LocalDateTime.now(), LocalDateTime.now())))
                 .isInstanceOf(ValidationException.class);
     }
 
     @Test
     void 유효한_비밀번호와_이메일로_회원가입시_성공() {
         // given
+        String username = "testuser";
         String email = "user@example.com";
         String password = "Password1@";
         User saved = User.builder()
-                .username("user_abc123")
+                .username(username)
                 .email(email)
                 .password(password)
                 .build();
 
-        given(userRepository.existsByUsername(any())).willReturn(false);
-        given(userRepository.existsByUsername(any())).willReturn(false);
+        given(userRepository.existsByUsername(username)).willReturn(false);
+        given(userRepository.existsByEmail(email)).willReturn(false);
         given(passwordEncoder.encode(any())).willReturn(password);
         given(userRepository.save(any(User.class))).willReturn(saved);
 
         // when
         UserResponse response = userService.register(
-            new UserRegisterRequest(password, email, LocalDateTime.now(), LocalDateTime.now())
+            new UserRegisterRequest(username, password, email, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
         assertThat(response).isNotNull();
         verify(userRepository).save(any(User.class));
     }
+
+    @Test
+    void 이메일_중복시_예외() {
+        // given
+        String email = "user@example.com";
+        String password = "Password1@";
+
+        given(userRepository.existsByUsername(any())).willReturn(false);
+        given(userRepository.existsByEmail(any())).willReturn(true);
+
+        // when
+        Exception exception = assertThrows(ValidationException.class, () ->
+            userService.register(new UserRegisterRequest("testuser", password, email, LocalDateTime.now(), LocalDateTime.now()))
+        );
+
+        // then
+        assertThat(exception.getMessage()).isEqualTo("Email already exists");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "notanemail",
+            "@nodomain.com",
+            "missing@",
+            "missing@dot"
+    })
+    void 유효하지않은_이메일로_회원가입시_ValidationException(String email) {
+        assertThatThrownBy(() ->
+                userService.register(new UserRegisterRequest("testuser", "Password1@", email, LocalDateTime.now(), LocalDateTime.now())))
+                .isInstanceOf(ValidationException.class);
+    }
+
+    // ── v2 registerWithAutoUsername() 테스트 ─────────────────────────────
 
     @Test
     void username_랜덤생성_prefix_형식_확인() {
@@ -102,8 +137,8 @@ class UserServiceTest {
         );
 
         // when
-        userService.register(
-                new UserRegisterRequest(password, email, LocalDateTime.now(), LocalDateTime.now())
+        userService.registerWithoutUsername(
+                new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
@@ -130,8 +165,8 @@ class UserServiceTest {
         given(userRepository.save(any(User.class))).willReturn(saved);
 
         // when
-        userService.register(
-                new UserRegisterRequest(password, email, LocalDateTime.now(), LocalDateTime.now())
+        userService.registerWithoutUsername(
+                new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now())
         );
 
         // then
@@ -139,51 +174,26 @@ class UserServiceTest {
     }
 
     @Test
-    void 이메일_중복시_예외() {
-        // given
-        String email = "user@example.com";
-        String password = "Password1@";
-        User saved = User.builder()
-                .username("user_abc123")
-                .id(1L)
-                .email(email)
-                .build();
-        given(userRepository.existsByEmail(any())).willReturn(true);
-
-        // when
-        Exception exception = assertThrows(ValidationException.class, () ->
-            userService.register(new UserRegisterRequest(password, email, LocalDateTime.now(), LocalDateTime.now()))
-        );
-
-        // then
-        assertThat(exception.getMessage()).isEqualTo("Email already exists");
-    }
-
-    @Test
     void username_10번_충돌시_예외() {
         // given
         String email = "user@example.com";
         String password = "Password1@";
-        User saved = User.builder()
-                .username("user_abc123")
-                .id(1L)
-                .email(email)
-                .build();
 
         given(userRepository.existsByEmail(any())).willReturn(false);
         Boolean[] trues = Collections.nCopies(10, true).toArray(new Boolean[0]);
         given(userRepository.existsByUsername(any()))
                 .willReturn(true, trues);
 
-
         // when
         Exception exception = assertThrows(ValidationException.class, () ->
-                userService.register(new UserRegisterRequest(password, email, LocalDateTime.now(), LocalDateTime.now()))
+                userService.registerWithoutUsername(new UserRegisterRequest(null, password, email, LocalDateTime.now(), LocalDateTime.now()))
         );
 
         // then
         assertThat(exception.getMessage()).isEqualTo("Failed to generate unique username. Please try again.");
     }
+
+    // ── v2 loginByEmail() 테스트 ─────────────────────────────────────────
 
     @Test
     void 동일_사용자_연속_두번_로그인시_서로다른_refreshToken_반환() {
@@ -200,23 +210,9 @@ class UserServiceTest {
                 .willReturn(firstToken)
                 .willReturn(secondToken);
 
-        TokenResponse response1 = userService.login(new LoginRequest(email, "Password1@"));
-        TokenResponse response2 = userService.login(new LoginRequest(email, "Password1@"));
+        TokenResponse response1 = userService.loginByEmail(email, "Password1@");
+        TokenResponse response2 = userService.loginByEmail(email, "Password1@");
 
         assertThat(response1.getRefreshToken()).isNotEqualTo(response2.getRefreshToken());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "notanemail",
-            "@nodomain.com",
-            "missing@",
-            "missing@dot"
-    })
-    void 유효하지않은_이메일로_회원가입시_ValidationException(String email) {
-
-        assertThatThrownBy(() ->
-                userService.register(new UserRegisterRequest("Password1@", email, LocalDateTime.now(), LocalDateTime.now())))
-                .isInstanceOf(ValidationException.class);
     }
 }

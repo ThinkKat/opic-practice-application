@@ -38,6 +38,81 @@ public class UserService {
         validatePassword(request.getPassword());
         validateEmail(request.getEmail());
 
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new ValidationException("Username already exists");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ValidationException("Email already exists");
+        }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .termsAgreedAt(request.getTermsAgreedAt())
+                .privacyAgreedAt(request.getPrivacyAgreedAt())
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        log.info("event=register | who={} | email={}", request.getUsername(), request.getEmail());
+        return UserMapper.toResponse(savedUser);
+    }
+
+    @Transactional
+    public TokenResponse loginByUsername(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        log.info("event=login_success | who={}", user.getUsername());
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getAccessTokenValidityInSeconds())
+                .user(UserMapper.toResponse(user))
+                .build();
+    }
+
+    @Transactional
+    public TokenResponse loginByEmail(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), password)
+        );
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        log.info("event=login_success | who={}", user.getUsername());
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getAccessTokenValidityInSeconds())
+                .user(UserMapper.toResponse(user))
+                .build();
+    }
+
+    /**
+     * Login Method without username
+     * AuthControllerV2 uses this method
+     */
+    @Transactional
+    public UserResponse registerWithoutUsername(UserRegisterRequest request) {
+        validatePassword(request.getPassword());
+        validateEmail(request.getEmail());
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ValidationException("Email already exists");
         }
@@ -56,28 +131,6 @@ public class UserService {
 
         log.info("event=register | who={} | email={}", username, request.getEmail());
         return UserMapper.toResponse(savedUser);
-    }
-
-    @Transactional
-    public TokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword())
-        );
-
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), user.getUserRole());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
-        log.info("event=login_success | who={}", user.getUsername());
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
-                .tokenType("Bearer")
-                .expiresIn(jwtTokenProvider.getAccessTokenValidityInSeconds())
-                .user(UserMapper.toResponse(user))
-                .build();
     }
 
     @Transactional(readOnly = true)
