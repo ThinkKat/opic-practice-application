@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<CommonResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request,
                                                                HttpServletRequest httpRequest) {
         httpRequest.setAttribute("auth-username", request.getUsername());
-        TokenResponse tokenResponse = userService.login(request);
+        TokenResponse tokenResponse = userService.loginByUsername(request);
 
         CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
                 .success(true)
