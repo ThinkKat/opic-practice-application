@@ -5,7 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.request.LoginEmailRequest;
-import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
+import me.thinkcat.opic.practice.dto.request.UserRegisterWithoutRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
 import me.thinkcat.opic.practice.service.UserService;
@@ -20,7 +20,7 @@ public class AuthControllerV2 {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<CommonResponse<UserResponse>> register(@Valid @RequestBody UserRegisterRequest request) {
+    public ResponseEntity<CommonResponse<UserResponse>> register(@Valid @RequestBody UserRegisterWithoutRequest request) {
         UserResponse userResponse = userService.registerWithoutUsername(request);
 
         CommonResponse<UserResponse> response = CommonResponse.<UserResponse>builder()
