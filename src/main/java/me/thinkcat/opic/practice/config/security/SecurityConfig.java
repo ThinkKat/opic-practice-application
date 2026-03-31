@@ -28,18 +28,18 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     private static final String[] PUBLIC_URLS = {
-            "/api/v1/auth/register",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
-            "/api/v1/auth/logout",
+            "/api/*/auth/register",
+            "/api/*/auth/login",
+            "/api/*/auth/refresh",
+            "/api/*/auth/logout",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/actuator/**",
-            "/api/v1/answers/internal/**",
-            "/api/v1/questions/internal/**",
-            "/api/v1/drill-answers/internal/**",
-            "/api/v1/notices/**"
+            "/api/*/answers/internal/**",
+            "/api/*/questions/internal/**",
+            "/api/*/drill-answers/internal/**",
+            "/api/*/notices/**"
     };
 
     @Bean

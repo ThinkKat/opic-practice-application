@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.mapper.UserMapper;
 import me.thinkcat.opic.practice.dto.request.LoginRequest;
 import me.thinkcat.opic.practice.dto.request.UserRegisterRequest;
+import me.thinkcat.opic.practice.dto.request.UserRegisterWithoutRequest;
 import me.thinkcat.opic.practice.dto.response.TokenResponse;
 import me.thinkcat.opic.practice.dto.response.MeResponse;
 import me.thinkcat.opic.practice.dto.response.UserResponse;
@@ -109,7 +110,7 @@ public class UserService {
      * AuthControllerV2 uses this method
      */
     @Transactional
-    public UserResponse registerWithoutUsername(UserRegisterRequest request) {
+    public UserResponse registerWithoutUsername(UserRegisterWithoutRequest request) {
         validatePassword(request.getPassword());
         validateEmail(request.getEmail());
 
