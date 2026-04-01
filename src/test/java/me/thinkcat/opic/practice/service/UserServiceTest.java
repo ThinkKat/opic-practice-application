@@ -9,6 +9,7 @@ import me.thinkcat.opic.practice.entity.RefreshToken;
 import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.UserRepository;
+import me.thinkcat.opic.practice.validation.UserValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,6 +17,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,6 +42,7 @@ class UserServiceTest {
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private AuthenticationManager authenticationManager;
     @Mock private RefreshTokenService refreshTokenService;
+    @Spy private UserValidator userValidator;
     @InjectMocks private UserService userService;
 
     // ── v1 register() 테스트 ──────────────────────────────────────────────

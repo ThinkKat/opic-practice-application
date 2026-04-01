@@ -14,6 +14,7 @@ import me.thinkcat.opic.practice.entity.User;
 import me.thinkcat.opic.practice.exception.ResourceNotFoundException;
 import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.UserRepository;
+import me.thinkcat.opic.practice.validation.UserValidator;
 import me.thinkcat.opic.practice.config.security.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,11 +34,12 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final UserValidator userValidator;
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
-        validatePassword(request.getPassword());
-        validateEmail(request.getEmail());
+        userValidator.validatePassword(request.getPassword());
+        userValidator.validateEmail(request.getEmail());
 
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ValidationException("Username already exists");
@@ -111,8 +113,8 @@ public class UserService {
      */
     @Transactional
     public UserResponse registerWithoutUsername(UserRegisterWithoutRequest request) {
-        validatePassword(request.getPassword());
-        validateEmail(request.getEmail());
+        userValidator.validatePassword(request.getPassword());
+        userValidator.validateEmail(request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ValidationException("Email already exists");
@@ -183,16 +185,4 @@ public class UserService {
         throw new ValidationException("Failed to generate unique username. Please try again.");
     }
 
-    private void validatePassword(String password) {
-        String pattern = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
-        if (!password.matches(pattern)) {
-            throw new ValidationException("Password must be at least 8 characters with uppercase, lowercase, digit, and special character");
-        }
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
-            throw new ValidationException("Invalid email format");
-        }
-    }
 }
