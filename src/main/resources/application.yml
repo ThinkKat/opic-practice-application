@@ -10,6 +10,18 @@ aws:
   lambda:
     session-feedback-function-name: ${AWS_LAMBDA_SESSION_FEEDBACK_FUNCTION_NAME:opic-practice-audio-transcriber}
     drill-answer-feedback-function-name: ${AWS_LAMBDA_DRILL_ANSWER_FEEDBACK_FUNCTION_NAME:opic-practice-audio-transcriber}
+    email-sender-function-name: ${AWS_LAMBDA_EMAIL_SENDER_FUNCTION_NAME:opic-practice-password-reset-email-sender}
+
+password:
+  reset:
+    code:
+      secret: ${PASSWORD_SECRET}
+    session-expire-minutes: ${PASSWORD_RESET_SESSION_EXPIRE_MINUTES}
+    code-expire-minutes: ${PASSWORD_RESET_CODE_EXPIRE_MINUTES}
+    max-attempts: ${PASSWORD_RESET_MAX_ATTEMPTS}
+    resend-cooldown-seconds: ${PASSWORD_RESET_RESEND_COOLDOWN_SECONDS}
+    max-resend-count: ${PASSWORD_RESET_MAX_RESEND_COUNT}
+    block-minutes: ${PASSWORD_RESET_BLOCK_MINUTES}
 
 internal:
   api-key: ${INTERNAL_API_KEY}
