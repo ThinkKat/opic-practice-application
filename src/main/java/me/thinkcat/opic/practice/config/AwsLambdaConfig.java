@@ -17,6 +17,7 @@ public class AwsLambdaConfig {
 
     private String sessionFeedbackFunctionName;
     private String drillAnswerFeedbackFunctionName;
+    private String emailSenderFunctionName;
 
     @Bean
     public LambdaAsyncClient lambdaAsyncClient(PresignedUrlProperties s3Properties) {
