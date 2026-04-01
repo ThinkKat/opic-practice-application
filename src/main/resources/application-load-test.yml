@@ -33,6 +33,17 @@ jwt:
 internal:
   api-key: ${INTERNAL_API_KEY:load-test-key}
 
+password:
+  reset:
+    code:
+      secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
+    session-expire-minutes: 100
+    code-expire-minutes: 100
+    max-attempts: 100
+    resend-cooldown-seconds: 100
+    max-resend-count: 100
+    block-minutes: 100
+
 aws:
   s3:
     bucket: opic-practice-test

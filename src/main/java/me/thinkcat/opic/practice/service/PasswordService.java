@@ -8,6 +8,7 @@ import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.PasswordResetSessionRepository;
 import me.thinkcat.opic.practice.repository.RefreshTokenRepository;
 import me.thinkcat.opic.practice.repository.UserRepository;
+import me.thinkcat.opic.practice.validation.UserValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class PasswordService {
     final private RefreshTokenRepository refreshTokenRepository;
     final private PasswordEncoder passwordEncoder;
     final private EmailService emailService;
+    final private UserValidator userValidator;
     final private String hashAlgorithm = "HmacSHA256";
 
     @Value("${password.reset.code.secret}")
@@ -149,6 +151,9 @@ public class PasswordService {
         if (session.getUserId() == null || !session.getUserId().equals(user.getId())) {
             throw new ValidationException("Invalid session");
         }
+
+        // Validate new password format
+        userValidator.validatePassword(newPassword);
 
         // Encode new password and update
         user.setPassword(passwordEncoder.encode(newPassword));
