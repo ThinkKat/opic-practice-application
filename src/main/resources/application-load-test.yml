@@ -51,6 +51,11 @@ aws:
     session-feedback-function-name: opic-transcription-test
     drill-answer-feedback-function-name: drill-transcription-test
 
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
 management:
   endpoints:
     web:
