@@ -8,6 +8,7 @@ import me.thinkcat.opic.practice.exception.ValidationException;
 import me.thinkcat.opic.practice.repository.PasswordResetSessionRepository;
 import me.thinkcat.opic.practice.repository.RefreshTokenRepository;
 import me.thinkcat.opic.practice.repository.UserRepository;
+import me.thinkcat.opic.practice.validation.UserValidator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ class PasswordServiceTest {
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailService emailService;
+    @Spy private UserValidator userValidator;
 
     @InjectMocks private PasswordService passwordService;
 
