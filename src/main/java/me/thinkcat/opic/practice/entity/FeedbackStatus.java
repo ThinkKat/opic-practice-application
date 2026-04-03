@@ -16,8 +16,11 @@ public enum FeedbackStatus {
     /** 피드백 생성 전 (권한 없는 사용자 포함) */
     NONE("FBS0001", "none"),
 
-    /** 피드백 생성 요청됨 (Lambda invoke 완료, 결과 대기 중) */
-    REQUESTED("FBS0002", "requested"),
+    /** 전사 요청됨 (Lambda invoke 완료, 전사 결과 대기 중) */
+    REQUESTED_TRANSCRIPTION("FBS0002", "requested_transcription"),
+
+    /** 피드백 요청됨 (전사 완료, 피드백 생성 대기 중) */
+    REQUESTED_FEEDBACK("FBS0006", "requested_feedback"),
 
     /** 피드백 생성 완료 */
     COMPLETED("FBS0003", "completed"),

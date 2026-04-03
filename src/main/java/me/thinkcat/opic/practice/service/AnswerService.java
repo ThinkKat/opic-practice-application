@@ -2,6 +2,7 @@ package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
 import me.thinkcat.opic.practice.dto.mapper.AnswerMapper;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
@@ -120,7 +121,11 @@ public class AnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+            feedbackLambdaService.invokeSessionFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(answer.getAudioUrl())
+                    .userId(userId)
+                    .questionText(questionText)
+                    .build());
             return resolveAnswerResponse(updatedAnswer);
         }
 
@@ -165,7 +170,11 @@ public class AnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeSessionFeedbackAsync(fileKey, userId, questionText);
+            feedbackLambdaService.invokeSessionFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(fileKey)
+                    .userId(userId)
+                    .questionText(questionText)
+                    .build());
             return;
         }
 
@@ -241,6 +250,7 @@ public class AnswerService {
         if (duration != null && answer.getDurationMs() == 0) {
             answer.setDurationMs((int) (duration * 1000));
         }
+        answer.requestFeedbackProcessing();
         answerRepository.save(answer);
         log.info("event=feedback_transcription_saved | audioUrl={}", audioUrl);
     }
@@ -299,7 +309,12 @@ public class AnswerService {
         String questionText = questionRepository.findById(answer.getQuestionId())
                 .map(Question::getQuestion)
                 .orElse(null);
-        feedbackLambdaService.invokeSessionFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+        feedbackLambdaService.invokeSessionFeedbackAsync(LambdaFeedbackRequest.builder()
+                .audioUrl(answer.getAudioUrl())
+                .userId(userId)
+                .questionText(questionText)
+                .transcription(answer.getTranscript())
+                .build());
     }
 
     private AnswerResponse resolveAnswerResponse(Answer answer) {
@@ -328,10 +343,8 @@ public class AnswerService {
         if (answer.getStorageType() == StorageType.S3) {
             return presignedUrlService.generateDownloadUrl(answer.getAudioUrl())
                     .getUploadUrl();
-        } else {
-            // TODO: LOCAL 타입은 삭제 예정.
-            return "/api/v1/files/stream/" + answer.getAudioUrl();
         }
+        throw new ValidationException("Unsupported storage type: " + answer.getStorageType());
     }
 
     /**

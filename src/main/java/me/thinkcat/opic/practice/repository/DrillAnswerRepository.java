@@ -31,7 +31,7 @@ public interface DrillAnswerRepository extends JpaRepository<DrillAnswer, Long> 
     List<DrillAnswer> findByQuestionIdAndUploadStatusCodeOrderByCreatedAtDesc(
             Long questionId, String uploadStatusCode);
 
-    List<DrillAnswer> findByFeedbackStatusCodeAndUpdatedAtBefore(String feedbackStatusCode, LocalDateTime threshold);
+    List<DrillAnswer> findByFeedbackStatusCodeInAndStatusChangedAtBefore(List<String> feedbackStatusCodes, LocalDateTime threshold);
 
     @Query("""
             SELECT d.questionId AS questionId,

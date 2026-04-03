@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: opic-practice
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
+  access-expiration: 5000
+  refresh-expiration: 10000
+
+internal:
+  api-key: testtesttesttesttest
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    version: openapi_3_0
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: false
+
+aws:
+  s3:
+    bucket: test
+    region: ap-northeast-2
+    presigned-url-expiration: 900
+  lambda:
+    session-feedback-function-name: test-function
+    drill-answer-feedback-function-name: test-function
+    email-sender-function-name: test-function
+
+password:
+  reset:
+    code:
+      secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
+    session-expire-minutes: 100
+    code-expire-minutes: 100
+    max-attempts: 100
+    resend-cooldown-seconds: 100
+    max-resend-count: 100
+    block-minutes: 100
