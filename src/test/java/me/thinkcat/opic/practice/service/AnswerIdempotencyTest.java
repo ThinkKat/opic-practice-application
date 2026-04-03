@@ -1,13 +1,8 @@
 package me.thinkcat.opic.practice.service;
 
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
-import me.thinkcat.opic.practice.entity.Answer;
-import me.thinkcat.opic.practice.entity.FeedbackStatus;
-import me.thinkcat.opic.practice.entity.Session;
-import me.thinkcat.opic.practice.entity.SessionStatus;
-import me.thinkcat.opic.practice.entity.StorageType;
-import me.thinkcat.opic.practice.entity.User;
-import me.thinkcat.opic.practice.entity.UserRole;
+import me.thinkcat.opic.practice.entity.*;
 import me.thinkcat.opic.practice.repository.AnswerRepository;
 import me.thinkcat.opic.practice.repository.QuestionRepository;
 import me.thinkcat.opic.practice.repository.SessionRepository;
@@ -67,6 +62,7 @@ class AnswerIdempotencyTest {
                 .storageType(StorageType.S3)
                 .mimeType("audio/m4a")
                 .durationMs(0)
+                .uploadStatusCode(UploadStatus.SUCCESS.getCode())
                 .build();
 
         Session session = Session.builder()
@@ -99,9 +95,9 @@ class AnswerIdempotencyTest {
         answerService.completeAnswerUpload(userId, UserRole.PAID, answerId, 5000);
         answerService.handleS3UploadDetected(fileKey);
 
-        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
+        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED_TRANSCRIPTION);
         verify(feedbackLambdaService, times(1))
-                .invokeSessionFeedbackAsync(eq(fileKey), eq(userId), any());
+                .invokeSessionFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 
     @Test
@@ -109,9 +105,9 @@ class AnswerIdempotencyTest {
         answerService.handleS3UploadDetected(fileKey);
         answerService.completeAnswerUpload(userId, UserRole.PAID, answerId, 5000);
 
-        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
+        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED_TRANSCRIPTION);
         verify(feedbackLambdaService, times(1))
-                .invokeSessionFeedbackAsync(eq(fileKey), eq(userId), any());
+                .invokeSessionFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 
     @Test
@@ -124,6 +120,6 @@ class AnswerIdempotencyTest {
 
         assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.NONE);
         verify(feedbackLambdaService, never())
-                .invokeSessionFeedbackAsync(any(), any(), any());
+                .invokeSessionFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 }

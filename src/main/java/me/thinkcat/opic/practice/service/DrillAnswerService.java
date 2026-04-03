@@ -2,6 +2,7 @@ package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
 import me.thinkcat.opic.practice.dto.mapper.DrillAnswerMapper;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
 import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
@@ -109,7 +110,11 @@ public class DrillAnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(answer.getAudioUrl())
+                    .userId(userId)
+                    .questionText(questionText)
+                    .build());
             return resolveDrillAnswerResponse(updatedAnswer);
         }
 
@@ -150,7 +155,11 @@ public class DrillAnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(fileKey, answer.getUserId(), questionText);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(fileKey)
+                    .userId(answer.getUserId())
+                    .questionText(questionText)
+                    .build());
             return;
         }
 
@@ -219,6 +228,7 @@ public class DrillAnswerService {
         if (duration != null && answer.getDurationMs() == 0) {
             answer.setDurationMs((int) (duration * 1000));
         }
+        answer.requestFeedbackProcessing();
         drillAnswerRepository.save(answer);
         log.info("event=drill_transcription_saved | audioUrl={}", audioUrl);
     }
@@ -278,7 +288,12 @@ public class DrillAnswerService {
         String questionText = questionRepository.findById(answer.getQuestionId())
                 .map(Question::getQuestion)
                 .orElse(null);
-        feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+        feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                .audioUrl(answer.getAudioUrl())
+                .userId(userId)
+                .questionText(questionText)
+                .transcription(answer.getTranscript())
+                .build());
     }
 
     private DrillAnswerResponse resolveDrillAnswerResponse(DrillAnswer answer) {

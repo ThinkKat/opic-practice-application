@@ -32,7 +32,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     List<Answer> findByUploadStatusCodeAndUpdatedAtBefore(String uploadStatusCode, LocalDateTime threshold);
 
-    List<Answer> findByFeedbackStatusCodeAndUpdatedAtBefore(String feedbackStatusCode, LocalDateTime threshold);
+    List<Answer> findByFeedbackStatusCodeInAndStatusChangedAtBefore(List<String> feedbackStatusCodes, LocalDateTime threshold);
 
     List<Answer> findByQuestionId(Long questionId);
 
