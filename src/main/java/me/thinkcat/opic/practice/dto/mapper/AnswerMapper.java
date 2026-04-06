@@ -26,6 +26,7 @@ public class AnswerMapper {
                 .uploadStatusText(uploadStatus.getText())
                 .feedbackStatus(feedbackStatus.name())
                 .feedbackStatusText(feedbackStatus.getText())
+                .statusChangedAt(answer.getStatusChangedAt())
                 .createdAt(answer.getCreatedAt())
                 .updatedAt(answer.getUpdatedAt())
                 .build();

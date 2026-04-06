@@ -27,6 +27,7 @@ public class DrillAnswerResponse {
     private String uploadStatusText;
     private String feedbackStatus;
     private String feedbackStatusText;
+    private LocalDateTime statusChangedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
