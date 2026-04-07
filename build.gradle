@@ -1,7 +1,18 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.flywaydb:flyway-database-postgresql:11.7.2'
+        classpath 'org.postgresql:postgresql:42.7.7'
+    }
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.flywaydb.flyway' version '11.7.2'
 }
 
 group = 'me.thinkcat.opic'
@@ -26,8 +37,6 @@ repositories {
 
 sourceSets {
 	integrationTest {
-//		java.srcDir 'src/integrationTest/java'
-//		resources.srcDir 'src/integrationTest/resources'
 		compileClasspath += sourceSets.main.output + sourceSets.test.output
 		runtimeClasspath += sourceSets.main.output + sourceSets.test.output
 	}
@@ -70,6 +79,8 @@ dependencies {
 	// Database
 	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'com.h2database:h2'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
 
 	// Metrics
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
@@ -95,3 +106,13 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+flyway {
+    url = project.findProperty('dbUrl')
+    user = project.findProperty('dbUser')
+    password = project.findProperty('dbPassword')
+    schemas = ['public']
+    baselineOnMigrate = true
+    baselineVersion = '1'
+}
+

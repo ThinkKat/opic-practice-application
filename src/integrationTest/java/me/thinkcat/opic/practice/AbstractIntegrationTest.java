@@ -25,7 +25,7 @@ public abstract class AbstractIntegrationTest {
     static final PostgreSQLContainer<?> postgres;
 
     static {
-        postgres = new PostgreSQLContainer<>("postgres:16")
+        postgres = new PostgreSQLContainer<>("postgres:15")
                 .withDatabaseName("opic_test")
                 .withUsername("test")
                 .withPassword("test");

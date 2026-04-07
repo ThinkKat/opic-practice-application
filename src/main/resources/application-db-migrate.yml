@@ -1,0 +1,12 @@
+spring:
+  flyway:
+    enabled: true
+    url: ${DB_URL}
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  main:
+    web-application-type: none
+
+logging:
+  level:
+    org.flywaydb.core: off
