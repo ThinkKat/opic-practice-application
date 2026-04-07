@@ -8,12 +8,6 @@ import lombok.Getter;
 @Builder
 public class LambdaFeedbackRequest {
 
-    @JsonProperty("source")
-    private final String source;
-
-    @JsonProperty("bucket")
-    private final String bucket;
-
     @JsonProperty("audioUrl")
     private final String audioUrl;
 
@@ -22,4 +16,7 @@ public class LambdaFeedbackRequest {
 
     @JsonProperty("questionText")
     private final String questionText;
+
+    @JsonProperty("transcription")
+    private final String transcription;
 }

@@ -2,9 +2,8 @@ package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.thinkcat.opic.practice.dto.mapper.DrillAnswerMapper;
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
-import me.thinkcat.opic.practice.dto.response.DrillAnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareDrillAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.dto.response.RecentDrillQuestionResponse;
@@ -78,7 +77,7 @@ public class DrillAnswerService {
     }
 
     @Transactional
-    public DrillAnswerResponse submitDrillAnswer(Long userId, UserRole userRole, Long drillAnswerId, Integer durationMs) {
+    public DrillAnswer submitDrillAnswer(Long userId, UserRole userRole, Long drillAnswerId, Integer durationMs) {
         DrillAnswer answer = drillAnswerRepository.findByIdForUpdate(drillAnswerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Drill answer not found with id: " + drillAnswerId));
 
@@ -98,7 +97,7 @@ public class DrillAnswerService {
 
         if (!answer.isFeedbackNone()) {
             log.warn("event=drill_feedback_already_requested | who={} | drillAnswerId={}", userId, drillAnswerId);
-            return resolveDrillAnswerResponse(drillAnswerRepository.save(answer));
+            return drillAnswerRepository.save(answer);
         }
 
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
@@ -109,12 +108,15 @@ public class DrillAnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
-            return resolveDrillAnswerResponse(updatedAnswer);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(answer.getAudioUrl())
+                    .userId(userId)
+                    .questionText(questionText)
+                    .build());
+            return updatedAnswer;
         }
 
-        DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
-        return resolveDrillAnswerResponse(updatedAnswer);
+        return drillAnswerRepository.save(answer);
     }
 
     @Transactional
@@ -150,7 +152,11 @@ public class DrillAnswerService {
             String questionText = questionRepository.findById(answer.getQuestionId())
                     .map(Question::getQuestion)
                     .orElse(null);
-            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(fileKey, answer.getUserId(), questionText);
+            feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                    .audioUrl(fileKey)
+                    .userId(answer.getUserId())
+                    .questionText(questionText)
+                    .build());
             return;
         }
 
@@ -196,14 +202,10 @@ public class DrillAnswerService {
     }
 
     @Transactional(readOnly = true)
-    public List<DrillAnswerResponse> getDrillAnswersByQuestion(Long userId, Long questionId) {
-        List<DrillAnswer> answers = drillAnswerRepository
+    public List<DrillAnswer> getDrillAnswersByQuestion(Long userId, Long questionId) {
+        return drillAnswerRepository
                 .findByUserIdAndQuestionIdAndUploadStatusCodeOrderByCreatedAtDesc(
                         userId, questionId, UploadStatus.SUCCESS.getCode());
-
-        return answers.stream()
-                .map(this::resolveDrillAnswerResponse)
-                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -219,6 +221,7 @@ public class DrillAnswerService {
         if (duration != null && answer.getDurationMs() == 0) {
             answer.setDurationMs((int) (duration * 1000));
         }
+        answer.requestFeedbackProcessing();
         drillAnswerRepository.save(answer);
         log.info("event=drill_transcription_saved | audioUrl={}", audioUrl);
     }
@@ -254,7 +257,7 @@ public class DrillAnswerService {
     }
 
     @Transactional
-    public void retryFeedback(Long answerId, Long userId) {
+    public DrillAnswer retryFeedback(Long answerId, Long userId) {
         DrillAnswer answer = drillAnswerRepository.findByIdForUpdate(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
 
@@ -272,38 +275,22 @@ public class DrillAnswerService {
         // No need to validate user role because retry is provided only for
         // the paid user or the answers when were created during event(ai-for-free)
         answer.requestFeedback();
-        drillAnswerRepository.save(answer);
+        DrillAnswer updatedAnswer = drillAnswerRepository.save(answer);
         log.info("event=drill_retry_feedback_requested | who={} | answerId={} | audioUrl={}",
                 userId, answer.getId(), answer.getAudioUrl());
         String questionText = questionRepository.findById(answer.getQuestionId())
                 .map(Question::getQuestion)
                 .orElse(null);
-        feedbackLambdaService.invokeDrillAnswerFeedbackAsync(answer.getAudioUrl(), userId, questionText);
+        feedbackLambdaService.invokeDrillAnswerFeedbackAsync(LambdaFeedbackRequest.builder()
+                .audioUrl(answer.getAudioUrl())
+                .userId(userId)
+                .questionText(questionText)
+                .transcription(answer.getTranscript())
+                .build());
+        return updatedAnswer;
     }
 
-    private DrillAnswerResponse resolveDrillAnswerResponse(DrillAnswer answer) {
-        DrillAnswerResponse response = DrillAnswerMapper.toResponse(answer);
-        return DrillAnswerResponse.builder()
-                .id(response.getId())
-                .userId(response.getUserId())
-                .questionId(response.getQuestionId())
-                .audioUrl(resolveAudioUrl(answer))
-                .storageType(response.getStorageType())
-                .mimeType(response.getMimeType())
-                .durationMs(response.getDurationMs())
-                .transcript(response.getTranscript())
-                .pauseAnalysis(response.getPauseAnalysis())
-                .feedback(response.getFeedback())
-                .uploadStatus(response.getUploadStatus())
-                .uploadStatusText(response.getUploadStatusText())
-                .feedbackStatus(response.getFeedbackStatus())
-                .feedbackStatusText(response.getFeedbackStatusText())
-                .createdAt(response.getCreatedAt())
-                .updatedAt(response.getUpdatedAt())
-                .build();
-    }
-
-    private String resolveAudioUrl(DrillAnswer answer) {
+    public String resolveAudioUrl(DrillAnswer answer) {
         if (answer.getStorageType() == StorageType.S3) {
             return presignedUrlService.generateDownloadUrl(answer.getAudioUrl())
                     .getUploadUrl();
