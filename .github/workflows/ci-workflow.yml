@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      ecr-registry: ${{ steps.login-ecr.outputs.registry }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,8 +39,48 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Send Discord Webhook
+        if: always()
         run: |
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"빌드 결과: ${{ job.status }}\n저장소: ${{ github.repository }}\"}" \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
-        if: always()
+               "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+  db-migrate:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect migration changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            migration:
+              - 'src/main/resources/db/migration/**'
+
+      - name: Configure AWS credentials
+        if: steps.changes.outputs.migration == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Run migration via SSM
+        if: steps.changes.outputs.migration == 'true'
+        env:
+          ECR_REGISTRY: ${{ needs.build-and-push.outputs.ecr-registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          PARAMS=$(jq -n \
+            --arg cmd1 "aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $ECR_REGISTRY" \
+            --arg cmd2 "docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            --arg cmd3 "docker run --rm -e SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -cp /app/app.jar -Dloader.main=me.thinkcat.opic.practice.entrypoint.FlywayMigrationApplication org.springframework.boot.loader.launch.PropertiesLauncher --spring.profiles.active=db-migrate" \
+            '{commands:[$cmd1,$cmd2,$cmd3]}'
+          )
+          
+          aws ssm send-command \
+          --targets "Key=tag:Name,Values=${{ secrets.EC2_NAME }}" \
+          --document-name "AWS-RunShellScript" \
+          --parameters "$PARAMS"

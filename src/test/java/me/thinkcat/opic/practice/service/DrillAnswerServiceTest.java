@@ -56,7 +56,6 @@ class DrillAnswerServiceTest {
         BDDMockito.given(drillAnswerRepository.findByIdForUpdate(drillAnswerId)).willReturn(Optional.of(pendingAnswer));
         BDDMockito.given(questionRepository.findById(ArgumentMatchers.any())).willReturn(Optional.empty());
         BDDMockito.given(drillAnswerRepository.save(ArgumentMatchers.any())).willAnswer(inv -> inv.getArgument(0));
-        BDDMockito.given(presignedUrlService.generateDownloadUrl(ArgumentMatchers.anyString())).willReturn(Mockito.mock(me.thinkcat.opic.practice.dto.response.PresignedUrlResponse.class));
 
         // when
         drillAnswerService.submitDrillAnswer(userId, UserRole.PAID, drillAnswerId, 5000);

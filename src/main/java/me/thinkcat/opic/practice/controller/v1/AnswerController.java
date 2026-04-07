@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.controller;
+package me.thinkcat.opic.practice.controller.v1;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +13,8 @@ import me.thinkcat.opic.practice.dto.CommonResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareAnswerUploadResponse;
 import me.thinkcat.opic.practice.config.security.annotation.AuthUser;
 import me.thinkcat.opic.practice.config.security.AuthUserInfo;
+import me.thinkcat.opic.practice.dto.mapper.v1.AnswerMapper;
+import me.thinkcat.opic.practice.entity.Answer;
 import me.thinkcat.opic.practice.service.AnswerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +26,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-@RestController
+@RestController("v1AnswerController")
 @RequestMapping("/api/v1/answers")
 @RequiredArgsConstructor
 public class AnswerController {
@@ -45,14 +48,11 @@ public class AnswerController {
                 request.getContentType(),
                 request.getContentLength());
 
-        CommonResponse<PrepareAnswerUploadResponse> commonResponse =
-                CommonResponse.<PrepareAnswerUploadResponse>builder()
-                        .success(true)
-                        .result(response)
-                        .message("Upload prepared successfully")
-                        .build();
-
-        return ResponseEntity.ok(commonResponse);
+        return ResponseEntity.ok(CommonResponse.<PrepareAnswerUploadResponse>builder()
+                .success(true)
+                .result(response)
+                .message("Upload prepared successfully")
+                .build());
     }
 
     @PostMapping("/complete-upload")
@@ -60,19 +60,19 @@ public class AnswerController {
             @Valid @RequestBody CompleteAnswerUploadRequest request,
             @AuthUser AuthUserInfo user) {
 
-        AnswerResponse answerResponse = answerService.completeAnswerUpload(
+        Answer answer = answerService.completeAnswerUpload(
                 user.getUserId(),
                 user.getRole(),
                 request.getAnswerId(),
                 request.getDurationMs());
 
-        CommonResponse<AnswerResponse> response = CommonResponse.<AnswerResponse>builder()
+        AnswerResponse answerResponse = AnswerMapper.toResponse(answer, answerService.resolveAudioUrl(answer));
+
+        return ResponseEntity.ok(CommonResponse.<AnswerResponse>builder()
                 .success(true)
                 .result(answerResponse)
                 .message("Answer upload completed successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @PostMapping("/internal/s3-upload-detected")
@@ -81,12 +81,10 @@ public class AnswerController {
 
         answerService.handleS3UploadDetected(request.getFileKey());
 
-        CommonResponse<Void> response = CommonResponse.<Void>builder()
+        return ResponseEntity.ok(CommonResponse.<Void>builder()
                 .success(true)
                 .message("S3 upload detected processed successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @PatchMapping("/internal/transcription")
@@ -100,12 +98,10 @@ public class AnswerController {
                 request.getPauseAnalysis(),
                 request.getDuration());
 
-        CommonResponse<Void> response = CommonResponse.<Void>builder()
+        return ResponseEntity.ok(CommonResponse.<Void>builder()
                 .success(true)
                 .message("Transcription updated successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @PatchMapping("/internal/feedback")
@@ -114,12 +110,10 @@ public class AnswerController {
 
         answerService.updateFeedback(request.getAudioUrl(), request.getFeedback());
 
-        CommonResponse<Void> response = CommonResponse.<Void>builder()
+        return ResponseEntity.ok(CommonResponse.<Void>builder()
                 .success(true)
                 .message("Feedback updated successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @PatchMapping("/internal/feedback-status")
@@ -128,25 +122,25 @@ public class AnswerController {
 
         answerService.updateFeedbackFailed(request.getAudioUrl(), request.getReason());
 
-        CommonResponse<Void> response = CommonResponse.<Void>builder()
+        return ResponseEntity.ok(CommonResponse.<Void>builder()
                 .success(true)
                 .message("Feedback status updated successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @PostMapping("/{answerId}/retry-feedback")
-    public ResponseEntity<CommonResponse<Void>> retryFeedback(
-        @PathVariable Long answerId,
-        @AuthUser AuthUserInfo user
-    ) {
-        answerService.retryFeedback(answerId, user.getUserId());
-        CommonResponse<Void> response = CommonResponse.<Void>builder()
+    public ResponseEntity<CommonResponse<AnswerResponse>> retryFeedback(
+            @PathVariable Long answerId,
+            @AuthUser AuthUserInfo user) {
+
+        Answer answer = answerService.retryFeedback(answerId, user.getUserId());
+        AnswerResponse answerResponse = AnswerMapper.toResponse(answer, answerService.resolveAudioUrl(answer));
+
+        return ResponseEntity.ok(CommonResponse.<AnswerResponse>builder()
                 .success(true)
+                .result(answerResponse)
                 .message("Re-invoke Feedback successfully")
-                .build();
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @GetMapping("/sessions/{sessionId}")
@@ -154,16 +148,15 @@ public class AnswerController {
             @PathVariable Long sessionId,
             @AuthUser AuthUserInfo user) {
 
-        Long userId = user.getUserId();
-        List<AnswerResponse> answers = answerService.getSessionAnswers(sessionId, userId);
+        List<AnswerResponse> answers = answerService.getSessionAnswers(sessionId, user.getUserId())
+                .stream()
+                .map(a -> AnswerMapper.toResponse(a, answerService.resolveAudioUrl(a)))
+                .collect(Collectors.toList());
 
-        CommonResponse<List<AnswerResponse>> response = CommonResponse.<List<AnswerResponse>>builder()
+        return ResponseEntity.ok(CommonResponse.<List<AnswerResponse>>builder()
                 .success(true)
                 .result(answers)
                 .message("Answers retrieved successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
-
 }

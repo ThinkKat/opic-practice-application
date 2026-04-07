@@ -57,7 +57,6 @@ class AnswerServiceTest {
         // given
         BDDMockito.given(answerRepository.findByIdForUpdate(answerId)).willReturn(Optional.of(pendingAnswer));
         BDDMockito.given(featureFlagService.isEnabled("ai-for-free")).willReturn(true);
-        BDDMockito.given(presignedUrlService.generateDownloadUrl(ArgumentMatchers.anyString())).willReturn(Mockito.mock(PresignedUrlResponse.class));
         BDDMockito.given(sessionRepository.findByIdAndUserId(1L, userId)).willReturn(Optional.of(session));
         BDDMockito.given(questionRepository.findById(ArgumentMatchers.any())).willReturn(Optional.empty());
         BDDMockito.given(answerRepository.save(ArgumentMatchers.any())).willAnswer(inv -> inv.getArgument(0));
@@ -75,7 +74,6 @@ class AnswerServiceTest {
         BDDMockito.given(answerRepository.findByIdForUpdate(answerId)).willReturn(Optional.of(pendingAnswer));
         BDDMockito.given(featureFlagService.isEnabled("ai-for-free")).willReturn(false);
         BDDMockito.given(sessionRepository.findByIdAndUserId(1L, userId)).willReturn(Optional.of(session));
-        BDDMockito.given(presignedUrlService.generateDownloadUrl(ArgumentMatchers.anyString())).willReturn(Mockito.mock(PresignedUrlResponse.class));
         BDDMockito.given(answerRepository.save(ArgumentMatchers.any())).willAnswer(inv -> inv.getArgument(0));
 
         answerService.completeAnswerUpload(userId, UserRole.FREE, answerId, 5000);
@@ -89,7 +87,6 @@ class AnswerServiceTest {
         //given
         BDDMockito.given(answerRepository.findByIdForUpdate(answerId)).willReturn(Optional.of(pendingAnswer));
         BDDMockito.given(sessionRepository.findByIdAndUserId(1L, userId)).willReturn(Optional.of(session));
-        BDDMockito.given(presignedUrlService.generateDownloadUrl(ArgumentMatchers.anyString())).willReturn(Mockito.mock(PresignedUrlResponse.class));
         BDDMockito.given(questionRepository.findById(ArgumentMatchers.any())).willReturn(Optional.empty());
         BDDMockito.given(answerRepository.save(ArgumentMatchers.any())).willAnswer(inv -> inv.getArgument(0));
 
@@ -106,7 +103,6 @@ class AnswerServiceTest {
         // given
         BDDMockito.given(answerRepository.findByIdForUpdate(answerId)).willReturn(Optional.of(pendingAnswer));
         BDDMockito.given(sessionRepository.findByIdAndUserId(1L, userId)).willReturn(Optional.of(session));
-        BDDMockito.given(presignedUrlService.generateDownloadUrl(ArgumentMatchers.anyString())).willReturn(Mockito.mock(PresignedUrlResponse.class));
         BDDMockito.given(answerRepository.save(ArgumentMatchers.any())).willAnswer(inv -> inv.getArgument(0));
 
         // when
