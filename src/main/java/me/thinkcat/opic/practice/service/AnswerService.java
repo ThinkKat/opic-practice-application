@@ -3,9 +3,7 @@ package me.thinkcat.opic.practice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
-import me.thinkcat.opic.practice.dto.mapper.AnswerMapper;
 import me.thinkcat.opic.practice.dto.request.PresignedUrlRequest;
-import me.thinkcat.opic.practice.dto.response.AnswerResponse;
 import me.thinkcat.opic.practice.dto.response.PrepareAnswerUploadResponse;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.entity.Answer;
@@ -86,7 +84,7 @@ public class AnswerService {
     }
 
     @Transactional
-    public AnswerResponse completeAnswerUpload(
+    public Answer completeAnswerUpload(
             Long userId,
             UserRole userRole,
             Long answerId,
@@ -110,7 +108,7 @@ public class AnswerService {
 
         if (!answer.isFeedbackNone()) {
             log.warn("event=answer_feedback_already_requested | who={} | answerId={}", userId, answerId);
-            return resolveAnswerResponse(answerRepository.save(answer));
+            return answerRepository.save(answer);
         }
 
         if (userRole == UserRole.PAID || userRole == UserRole.ADMIN || featureFlagService.isEnabled("ai-for-free")) {
@@ -126,11 +124,10 @@ public class AnswerService {
                     .userId(userId)
                     .questionText(questionText)
                     .build());
-            return resolveAnswerResponse(updatedAnswer);
+            return updatedAnswer;
         }
 
-        Answer updatedAnswer = answerRepository.save(answer);
-        return resolveAnswerResponse(updatedAnswer);
+        return answerRepository.save(answer);
     }
 
     @Transactional
@@ -183,20 +180,17 @@ public class AnswerService {
     }
 
     @Transactional(readOnly = true)
-    public List<AnswerResponse> getSessionAnswers(Long sessionId, Long userId) {
+    public List<Answer> getSessionAnswers(Long sessionId, Long userId) {
         sessionRepository.findByIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with id: " + sessionId));
 
-        List<Answer> answers = answerRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-
-        return answers.stream()
-                .filter(answer -> answer.isUploadSuccess())
-                .map(this::resolveAnswerResponse)
+        return answerRepository.findBySessionIdOrderByCreatedAtAsc(sessionId).stream()
+                .filter(Answer::isUploadSuccess)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public AnswerResponse getAnswerForPlayback(Long answerId, Long userId) {
+    public Answer getAnswerForPlayback(Long answerId, Long userId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
 
@@ -234,7 +228,7 @@ public class AnswerService {
             throw new ValidationException("Answer upload failed");
         }
 
-        return resolveAnswerResponse(answer);
+        return answer;
     }
 
     @Transactional
@@ -286,7 +280,7 @@ public class AnswerService {
     }
 
     @Transactional
-    public void retryFeedback(Long answerId, Long userId) {
+    public Answer retryFeedback(Long answerId, Long userId) {
         Answer answer = answerRepository.findByIdForUpdate(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id: " + answerId));
 
@@ -303,7 +297,7 @@ public class AnswerService {
         // No need to validate user role because retry is provided only for
         // the paid user or the answers when were created during event(ai-for-free)
         answer.requestFeedback();
-        answerRepository.save(answer);
+        Answer updatedAnswer = answerRepository.save(answer);
         log.info("event=retry_feedback_requested | who={} | answerId={} | audioUrl={}",
                 userId, answer.getId(), answer.getAudioUrl());
         String questionText = questionRepository.findById(answer.getQuestionId())
@@ -315,31 +309,10 @@ public class AnswerService {
                 .questionText(questionText)
                 .transcription(answer.getTranscript())
                 .build());
+        return updatedAnswer;
     }
 
-    private AnswerResponse resolveAnswerResponse(Answer answer) {
-        AnswerResponse response = AnswerMapper.toResponse(answer);
-        return AnswerResponse.builder()
-                .id(response.getId())
-                .questionId(response.getQuestionId())
-                .sessionId(response.getSessionId())
-                .audioUrl(resolveAudioUrl(answer))
-                .storageType(response.getStorageType())
-                .mimeType(response.getMimeType())
-                .durationMs(response.getDurationMs())
-                .transcript(response.getTranscript())
-                .pauseAnalysis(response.getPauseAnalysis())
-                .feedback(response.getFeedback())
-                .uploadStatus(response.getUploadStatus())
-                .uploadStatusText(response.getUploadStatusText())
-                .feedbackStatus(response.getFeedbackStatus())
-                .feedbackStatusText(response.getFeedbackStatusText())
-                .createdAt(response.getCreatedAt())
-                .updatedAt(response.getUpdatedAt())
-                .build();
-    }
-
-    private String resolveAudioUrl(Answer answer) {
+    public String resolveAudioUrl(Answer answer) {
         if (answer.getStorageType() == StorageType.S3) {
             return presignedUrlService.generateDownloadUrl(answer.getAudioUrl())
                     .getUploadUrl();

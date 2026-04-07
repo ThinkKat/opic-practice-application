@@ -77,8 +77,6 @@ class DrillAnswerIdempotencyTest {
 
         lenient().when(questionRepository.findById(any())).thenReturn(Optional.empty());
         given(drillAnswerRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
-        given(presignedUrlService.generateDownloadUrl(anyString()))
-                .willReturn(mock(PresignedUrlResponse.class));
     }
 
     @Test

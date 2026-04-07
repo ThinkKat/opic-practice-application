@@ -32,6 +32,6 @@ jobs:
           else
             ICON="❌"
           fi
-          curl ${{ secrets.DISCORD_WEBHOOK_URL }} \
+          curl "${{ secrets.DISCORD_WEBHOOK_URL }}" \
           -H "Content-Type: application/json" \
           -d "{\"content\": \"${ICON} DB Migration 통합 테스트 ${STATUS}\n저장소: ${{ github.repository }}\nPR: ${{ github.event.pull_request.title }} (#${{github.event.pull_request.number }})\n요청자: ${{ github.actor }}\"}"

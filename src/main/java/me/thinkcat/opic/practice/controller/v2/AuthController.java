@@ -1,4 +1,4 @@
-package me.thinkcat.opic.practice.controller;
+package me.thinkcat.opic.practice.controller.v2;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -20,10 +20,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
-@RestController
+@RestController("v2AuthController")
 @RequestMapping("/api/v2/auth")
 @RequiredArgsConstructor
-public class AuthControllerV2 {
+public class AuthController {
 
     private final UserService userService;
     private final PasswordService passwordService;

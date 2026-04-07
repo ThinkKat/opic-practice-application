@@ -4,6 +4,8 @@ spring:
     url: ${DB_URL}
     user: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    baseline-on-migrate: true
+    baseline-version: 5
   main:
     web-application-type: none
 
