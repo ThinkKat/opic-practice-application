@@ -1,0 +1,12 @@
+spring:
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:54326/opic_practice
+    user: postgres
+    password: postgres
+  main:
+    web-application-type: none
+
+logging:
+  level:
+    org.flywaydb.core: off

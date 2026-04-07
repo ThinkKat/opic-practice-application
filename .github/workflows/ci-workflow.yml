@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      ecr-registry: ${{ steps.login-ecr.outputs.registry }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,8 +39,8 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Send Discord Webhook
+        if: always()
         run: |
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"빌드 결과: ${{ job.status }}\n저장소: ${{ github.repository }}\"}" \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
-        if: always()
+               "${{ secrets.DISCORD_WEBHOOK_URL }}"

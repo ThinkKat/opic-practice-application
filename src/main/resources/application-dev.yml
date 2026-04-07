@@ -1,4 +1,7 @@
 spring:
+  flyway:
+    enabled: false
+
   datasource:
     url: jdbc:h2:mem:opic_practice
     username: sa
@@ -12,9 +15,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     show-sql: true
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
 
   sql:
     init:

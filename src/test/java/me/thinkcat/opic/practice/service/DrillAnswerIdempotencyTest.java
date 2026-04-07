@@ -1,5 +1,6 @@
 package me.thinkcat.opic.practice.service;
 
+import me.thinkcat.opic.practice.dto.lambda.LambdaFeedbackRequest;
 import me.thinkcat.opic.practice.dto.response.PresignedUrlResponse;
 import me.thinkcat.opic.practice.entity.DrillAnswer;
 import me.thinkcat.opic.practice.entity.FeedbackStatus;
@@ -76,8 +77,6 @@ class DrillAnswerIdempotencyTest {
 
         lenient().when(questionRepository.findById(any())).thenReturn(Optional.empty());
         given(drillAnswerRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
-        given(presignedUrlService.generateDownloadUrl(anyString()))
-                .willReturn(mock(PresignedUrlResponse.class));
     }
 
     @Test
@@ -85,9 +84,9 @@ class DrillAnswerIdempotencyTest {
         drillAnswerService.submitDrillAnswer(userId, UserRole.PAID, drillAnswerId, 5000);
         drillAnswerService.handleS3UploadDetected(fileKey);
 
-        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
+        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED_TRANSCRIPTION);
         verify(feedbackLambdaService, times(1))
-                .invokeDrillAnswerFeedbackAsync(eq(fileKey), eq(userId), any());
+                .invokeDrillAnswerFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 
     @Test
@@ -95,9 +94,9 @@ class DrillAnswerIdempotencyTest {
         drillAnswerService.handleS3UploadDetected(fileKey);
         drillAnswerService.submitDrillAnswer(userId, UserRole.PAID, drillAnswerId, 5000);
 
-        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED);
+        assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.REQUESTED_TRANSCRIPTION);
         verify(feedbackLambdaService, times(1))
-                .invokeDrillAnswerFeedbackAsync(eq(fileKey), eq(userId), any());
+                .invokeDrillAnswerFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 
     @Test
@@ -110,6 +109,6 @@ class DrillAnswerIdempotencyTest {
 
         assertThat(pendingAnswer.getFeedbackStatus()).isEqualTo(FeedbackStatus.NONE);
         verify(feedbackLambdaService, never())
-                .invokeDrillAnswerFeedbackAsync(any(), any(), any());
+                .invokeDrillAnswerFeedbackAsync(any(LambdaFeedbackRequest.class));
     }
 }

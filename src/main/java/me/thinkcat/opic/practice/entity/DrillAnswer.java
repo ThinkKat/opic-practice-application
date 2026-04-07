@@ -17,6 +17,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.sql.Types;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "drill_answers")
@@ -75,6 +76,9 @@ public class DrillAnswer extends BaseEntity {
     @Builder.Default
     private String feedbackStatusCode = FeedbackStatus.NONE.getCode();
 
+    @Column(name = "status_changed_at")
+    private LocalDateTime statusChangedAt;
+
     // ── Upload Status ──────────────────────────────
 
     public UploadStatus getUploadStatus() {
@@ -108,19 +112,28 @@ public class DrillAnswer extends BaseEntity {
     }
 
     public void requestFeedback() {
-        this.feedbackStatusCode = FeedbackStatus.REQUESTED.getCode();
+        this.feedbackStatusCode = FeedbackStatus.REQUESTED_TRANSCRIPTION.getCode();
+        this.statusChangedAt = LocalDateTime.now();
+    }
+
+    public void requestFeedbackProcessing() {
+        this.feedbackStatusCode = FeedbackStatus.REQUESTED_FEEDBACK.getCode();
+        this.statusChangedAt = LocalDateTime.now();
     }
 
     public void completeFeedback() {
         this.feedbackStatusCode = FeedbackStatus.COMPLETED.getCode();
+        this.statusChangedAt = LocalDateTime.now();
     }
 
     public void failFeedback() {
         this.feedbackStatusCode = FeedbackStatus.FAILED.getCode();
+        this.statusChangedAt = LocalDateTime.now();
     }
 
     public void invalidateFeedback() {
         this.feedbackStatusCode = FeedbackStatus.INVALID.getCode();
+        this.statusChangedAt = LocalDateTime.now();
     }
 
     public boolean isFeedbackNone() {
@@ -128,7 +141,16 @@ public class DrillAnswer extends BaseEntity {
     }
 
     public boolean isFeedbackRequested() {
-        return getFeedbackStatus() == FeedbackStatus.REQUESTED;
+        return getFeedbackStatus() == FeedbackStatus.REQUESTED_TRANSCRIPTION
+                || getFeedbackStatus() == FeedbackStatus.REQUESTED_FEEDBACK;
+    }
+
+    public boolean isRequestedTranscription() {
+        return getFeedbackStatus() == FeedbackStatus.REQUESTED_TRANSCRIPTION;
+    }
+
+    public boolean isRequestedFeedback() {
+        return getFeedbackStatus() == FeedbackStatus.REQUESTED_FEEDBACK;
     }
 
     public boolean isFeedbackCompleted() {

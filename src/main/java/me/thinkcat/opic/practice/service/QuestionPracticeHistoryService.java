@@ -1,9 +1,9 @@
 package me.thinkcat.opic.practice.service;
 
 import lombok.RequiredArgsConstructor;
-import me.thinkcat.opic.practice.dto.mapper.AnswerMapper;
+import me.thinkcat.opic.practice.dto.mapper.v2.AnswerMapper;
 import me.thinkcat.opic.practice.dto.mapper.CategoryMapper;
-import me.thinkcat.opic.practice.dto.mapper.DrillAnswerMapper;
+import me.thinkcat.opic.practice.dto.mapper.v2.DrillAnswerMapper;
 import me.thinkcat.opic.practice.dto.mapper.QuestionMapper;
 import me.thinkcat.opic.practice.dto.mapper.QuestionTypeMapper;
 import me.thinkcat.opic.practice.dto.response.AnswerResponse;
@@ -108,47 +108,13 @@ public class QuestionPracticeHistoryService {
     }
 
     private AnswerResponse resolveSessionAnswerResponse(Answer answer) {
-        AnswerResponse response = AnswerMapper.toResponse(answer);
-        return AnswerResponse.builder()
-                .id(response.getId())
-                .questionId(response.getQuestionId())
-                .sessionId(response.getSessionId())
-                .audioUrl(resolveAudioUrl(answer.getAudioUrl(), answer.getStorageType()))
-                .storageType(response.getStorageType())
-                .mimeType(response.getMimeType())
-                .durationMs(response.getDurationMs())
-                .transcript(response.getTranscript())
-                .pauseAnalysis(response.getPauseAnalysis())
-                .feedback(response.getFeedback())
-                .uploadStatus(response.getUploadStatus())
-                .uploadStatusText(response.getUploadStatusText())
-                .feedbackStatus(response.getFeedbackStatus())
-                .feedbackStatusText(response.getFeedbackStatusText())
-                .createdAt(response.getCreatedAt())
-                .updatedAt(response.getUpdatedAt())
-                .build();
+        String resolvedAudioUrl = resolveAudioUrl(answer.getAudioUrl(), answer.getStorageType());
+        return AnswerMapper.toResponse(answer, resolvedAudioUrl);
     }
 
     private DrillAnswerResponse resolveDrillAnswerResponse(DrillAnswer answer) {
-        DrillAnswerResponse response = DrillAnswerMapper.toResponse(answer);
-        return DrillAnswerResponse.builder()
-                .id(response.getId())
-                .userId(response.getUserId())
-                .questionId(response.getQuestionId())
-                .audioUrl(resolveAudioUrl(answer.getAudioUrl(), answer.getStorageType()))
-                .storageType(response.getStorageType())
-                .mimeType(response.getMimeType())
-                .durationMs(response.getDurationMs())
-                .transcript(response.getTranscript())
-                .pauseAnalysis(response.getPauseAnalysis())
-                .feedback(response.getFeedback())
-                .uploadStatus(response.getUploadStatus())
-                .uploadStatusText(response.getUploadStatusText())
-                .feedbackStatus(response.getFeedbackStatus())
-                .feedbackStatusText(response.getFeedbackStatusText())
-                .createdAt(response.getCreatedAt())
-                .updatedAt(response.getUpdatedAt())
-                .build();
+        String resolvedAudioUrl = resolveAudioUrl(answer.getAudioUrl(), answer.getStorageType());
+        return DrillAnswerMapper.toResponse(answer, resolvedAudioUrl);
     }
 
     private String resolveAudioUrl(String audioUrl, StorageType storageType) {
