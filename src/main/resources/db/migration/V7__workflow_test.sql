@@ -1,0 +1,2 @@
+-- V7: test sql - noop
+-- testing for github action workflow

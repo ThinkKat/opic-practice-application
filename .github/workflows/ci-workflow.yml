@@ -44,3 +44,45 @@ jobs:
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"빌드 결과: ${{ job.status }}\n저장소: ${{ github.repository }}\"}" \
                "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+  check-migration:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.migration }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migration:
+              - 'src/main/resources/db/migration/**'
+
+  db-migrate:
+    needs: check-migration
+    if: needs.check-migration.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Upload migration files to S3
+        run: |
+          aws s3 sync src/main/resources/db/migration/ \
+            s3://${{ secrets.S3_MIGRATION_BUCKET }}
+
+      - name: Invoke Flyway Lambda
+        run: |
+          aws lambda invoke \
+            --function-name ${{ secrets.LAMBDA_FLYWAY_FUNCTION_NAME }} \
+            --invocation-type RequestResponse \
+            --log-type Tail \
+            response.json
+          cat response.json
