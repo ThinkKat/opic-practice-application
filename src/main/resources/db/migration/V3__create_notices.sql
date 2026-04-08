@@ -1,4 +1,4 @@
--- V003: notices 테이블 생성
+-- V005: notices 테이블 생성
 CREATE TABLE notices (
     id         BIGSERIAL    PRIMARY KEY,
     title      VARCHAR(200) NOT NULL,
