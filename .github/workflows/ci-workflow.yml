@@ -86,3 +86,10 @@ jobs:
             --log-type Tail \
             response.json
           cat response.json
+
+      - name: Send Discord Webhook
+        if: always()
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\": \"DB 마이그레이션 결과: ${{ job.status }}\n저장소: ${{ github.repository }}\"}" \
+               "${{ secrets.DISCORD_WEBHOOK_URL }}"
