@@ -14,6 +14,26 @@ public class DrillAnswerTest {
     }
 
     @Test
+    void Builder로_생성시_uploadStatusCode가_PENDING으로_초기화() {
+        // when
+        DrillAnswer built = DrillAnswer.builder().build();
+
+        // then
+        Assertions.assertThat(built.getUploadStatusCode()).isEqualTo(UploadStatus.PENDING.getCode());
+        Assertions.assertThat(built.getUploadStatus()).isEqualTo(UploadStatus.PENDING);
+    }
+
+    @Test
+    void Builder로_생성시_feedbackStatusCode가_NONE으로_초기화() {
+        // when
+        DrillAnswer built = DrillAnswer.builder().build();
+
+        // then
+        Assertions.assertThat(built.getFeedbackStatusCode()).isEqualTo(FeedbackStatus.NONE.getCode());
+        Assertions.assertThat(built.getFeedbackStatus()).isEqualTo(FeedbackStatus.NONE);
+    }
+
+    @Test
     void 람다_요청시_feedbackStatus_FBS0002로_변환() {
         // when
         answer.requestFeedback();

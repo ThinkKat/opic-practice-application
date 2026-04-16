@@ -68,6 +68,7 @@ public class Answer extends BaseEntity {
 
     @JdbcTypeCode(Types.CHAR)
     @Column(name = "upload_status_code", nullable = false, columnDefinition = "char(7)")
+    @Builder.Default
     private String uploadStatusCode = UploadStatus.PENDING.getCode();
 
     @JdbcTypeCode(Types.CHAR)
