@@ -36,7 +36,7 @@ internal:
 password:
   reset:
     code:
-      secret: dev-secret-key-change-in-production-this-must-be-at-least-256-bits-long
+      secret: ${PASSWORD_RESET_CODE_SECRET:load-test-secret-key-change-in-production-this-must-be-at-least-256-bits-long}
     session-expire-minutes: 100
     code-expire-minutes: 100
     max-attempts: 100
@@ -65,3 +65,6 @@ management:
     tags:
       application: opic-practice
       env: load-test
+    distribution:
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
